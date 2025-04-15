@@ -1,4 +1,5 @@
 "use client";
+
 import Checkbox from "@/components/form/input/Checkbox";
 import Input from "@/components/form/input/InputField";
 import Label from "@/components/form/Label";
@@ -6,10 +7,43 @@ import Button from "@/components/ui/button/Button";
 import Link from "next/link";
 import React, { useState } from "react";
 import {ChevronLeftIcon, EyeClosedIcon , EyeIcon} from "lucide-react";
+import { createClient } from "@/utils/supabase/client";
+import { useRouter } from "next/navigation";
+
 
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
+  const [email, setEmail] = useState(""); // Stato per email
+  const [password, setPassword] = useState(""); // Stato per password
+
+  const supabase = createClient();
+  const router = useRouter(); // Hook del router
+
+  const handleLogin = async (event: React.FormEvent) => {
+    event.preventDefault(); // Evita il comportamento di default del form
+    debugger;
+    try {
+      // Effettua il login con email e password
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password,
+      });
+
+      if (error) {
+        console.error("Errore di login:", error.message);
+        return;
+      }
+
+      // Se il login è riuscito, redirigi alla pagina del dashboard dell'utente
+      if (data) {
+        router.push(`/${data.user.id}/dashboard`);
+      }
+    } catch (error) {
+      console.error("Errore durante il login:", error);
+    }
+  };
+
   return (
     <div className="flex flex-col flex-1 lg:w-1/2 w-full">
       <div className="w-full max-w-md sm:pt-10 mx-auto mb-5">
@@ -90,7 +124,7 @@ export default function SignInForm() {
                   <Label>
                     Email <span className="text-error-500">*</span>{" "}
                   </Label>
-                  <Input placeholder="info@gmail.com" type="email" />
+                  <Input placeholder="info@gmail.com" type="email" onChange={(e) => setEmail(e.target.value)} />
                 </div>
                 <div>
                   <Label>
@@ -100,6 +134,7 @@ export default function SignInForm() {
                     <Input
                       type={showPassword ? "text" : "password"}
                       placeholder="Enter your password"
+                      onChange={(e) => setPassword(e.target.value)}
                     />
                     <span
                       onClick={() => setShowPassword(!showPassword)}
@@ -128,9 +163,11 @@ export default function SignInForm() {
                   </Link>
                 </div>
                 <div>
-                  <Button className="w-full" size="sm">
-                    Sign in
-                  </Button>
+                <div>
+                  <button onClick={handleLogin} className="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600">
+                    Sign In
+                  </button>
+                </div>
                 </div>
               </div>
             </form>

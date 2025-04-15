@@ -20,12 +20,6 @@ const Header: React.FC = () => {
     await supabase.auth.signOut();
   };
 
-  const handleLogin = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: "google", // o github, discord, ecc.
-    });
-  };
-
   const handleSignUp = async () => {
     const { data, error } = await supabase.auth.signUp({
       email: 'example@email.com',
@@ -127,11 +121,16 @@ const Header: React.FC = () => {
         <div className="flex items-center gap-3">
           {!false ? (
             <>
-              <button onClick={handleLogin} className="rounded-md border border-primary px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10">
-                Login
+              <button className="rounded-md border border-primary px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10">
+                  <Link
+                    className="text-black hover:text-primary dark:text-white dark:hover:text-primary"
+                    href="/auth/signin"
+                  >
+                    Sign In
+                  </Link>
               </button>
-              <button onClick={handleSignUp} className="rounded-md border border-primary px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10">
-                <Link href="/signup" className="text-brand-500 hover:text-brand-600 dark:text-brand-400">
+              <button className="rounded-md border border-primary px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10">
+                <Link href="/auth/signup" className="text-brand-500 hover:text-brand-600 dark:text-brand-400">
                     Sign Up
                 </Link>
               </button>

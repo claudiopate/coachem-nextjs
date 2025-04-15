@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   description: "This is Next.js Signin Page Coachem Dashboard Template",
 };
 
+
 export default function SignIn() {
   return <SignInForm />;
 }
