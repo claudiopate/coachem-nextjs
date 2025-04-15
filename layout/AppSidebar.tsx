@@ -1,8 +1,8 @@
 "use client";
-import React, { useEffect, useRef, useState,useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useSidebar } from "../context/SidebarContext";
 import {
   BoxIcon,
@@ -30,7 +30,7 @@ const navItems: NavItem[] = [
   {
     icon: <GridIcon />,
     name: "Dashboard",
-    subItems: [{ name: "Ecommerce", path: "/", pro: false }],
+    subItems: [{ name: "Ecommerce", path: "/ecommerce", pro: false }],
   },
   {
     icon: <Calendar />,
@@ -42,7 +42,6 @@ const navItems: NavItem[] = [
     name: "User Profile",
     path: "/profile",
   },
-
   {
     name: "Forms",
     icon: <ListIcon />,
@@ -97,7 +96,14 @@ const othersItems: NavItem[] = [
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const pathname = usePathname();
-
+  const regex = /^\/([a-f0-9\-]{36})/;
+  const match = pathname.match(regex);
+  
+  let userId = null;
+  if (match) {
+    userId = match[1]; 
+  }
+  
   const renderMenuItems = (
     navItems: NavItem[],
     menuType: "main" | "others"
@@ -144,14 +150,12 @@ const AppSidebar: React.FC = () => {
           ) : (
             nav.path && (
               <Link
-                href={nav.path}
-                className={`menu-item group ${
-                  isActive(nav.path) ? "menu-item-active" : "menu-item-inactive"
-                }`}
+                href={`/${userId}${nav.path}`} // Usa userId dinamico qui
+                className={`menu-item group ${pathname === `/${userId}${nav.path}` ? "menu-item-active" : "menu-item-inactive"}`}
               >
                 <span
                   className={`${
-                    isActive(nav.path)
+                    pathname === `/${userId}${nav.path}`
                       ? "menu-item-icon-active"
                       : "menu-item-icon-inactive"
                   }`}
@@ -181,34 +185,18 @@ const AppSidebar: React.FC = () => {
                 {nav.subItems.map((subItem) => (
                   <li key={subItem.name}>
                     <Link
-                      href={subItem.path}
-                      className={`menu-dropdown-item ${
-                        isActive(subItem.path)
-                          ? "menu-dropdown-item-active"
-                          : "menu-dropdown-item-inactive"
-                      }`}
+                      href={`/${userId}${subItem.path}`} // Usa userId dinamico anche qui
+                      className={`menu-dropdown-item ${pathname === `/${userId}${subItem.path}` ? "menu-dropdown-item-active" : "menu-dropdown-item-inactive"}`}
                     >
                       {subItem.name}
                       <span className="flex items-center gap-1 ml-auto">
                         {subItem.new && (
-                          <span
-                            className={`ml-auto ${
-                              isActive(subItem.path)
-                                ? "menu-dropdown-badge-active"
-                                : "menu-dropdown-badge-inactive"
-                            } menu-dropdown-badge `}
-                          >
+                          <span className={`ml-auto ${pathname === `/${userId}${subItem.path}` ? "menu-dropdown-badge-active" : "menu-dropdown-badge-inactive"}`} >
                             new
                           </span>
                         )}
                         {subItem.pro && (
-                          <span
-                            className={`ml-auto ${
-                              isActive(subItem.path)
-                                ? "menu-dropdown-badge-active"
-                                : "menu-dropdown-badge-inactive"
-                            } menu-dropdown-badge `}
-                          >
+                          <span className={`ml-auto ${pathname === `/${userId}${subItem.path}` ? "menu-dropdown-badge-active" : "menu-dropdown-badge-inactive"}`} >
                             pro
                           </span>
                         )}
@@ -233,11 +221,9 @@ const AppSidebar: React.FC = () => {
   );
   const subMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  // const isActive = (path: string) => path === pathname;
-   const isActive = useCallback((path: string) => path === pathname, [pathname]);
+  const isActive = useCallback((path: string) => path === pathname, [pathname]);
 
   useEffect(() => {
-    // Check if the current path matches any submenu item
     let submenuMatched = false;
     ["main", "others"].forEach((menuType) => {
       const items = menuType === "main" ? navItems : othersItems;
@@ -256,14 +242,12 @@ const AppSidebar: React.FC = () => {
       });
     });
 
-    // If no submenu item matches, close the open submenu
     if (!submenuMatched) {
       setOpenSubmenu(null);
     }
-  }, [pathname,isActive]);
+  }, [pathname, isActive]);
 
   useEffect(() => {
-    // Set the height of the submenu items when the submenu is opened
     if (openSubmenu !== null) {
       const key = `${openSubmenu.type}-${openSubmenu.index}`;
       if (subMenuRefs.current[key]) {
@@ -291,12 +275,11 @@ const AppSidebar: React.FC = () => {
   return (
     <aside
       className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-200 
-        ${
-          isExpanded || isMobileOpen
-            ? "w-[290px]"
-            : isHovered
-            ? "w-[290px]"
-            : "w-[90px]"
+        ${isExpanded || isMobileOpen
+          ? "w-[290px]"
+          : isHovered
+          ? "w-[290px]"
+          : "w-[90px]"
         }
         ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
         lg:translate-x-0`}
@@ -342,33 +325,21 @@ const AppSidebar: React.FC = () => {
             <div>
               <h2
                 className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
-                  !isExpanded && !isHovered
-                    ? "lg:justify-center"
-                    : "justify-start"
+                  !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
                 }`}
               >
-                {isExpanded || isHovered || isMobileOpen ? (
-                  "Menu"
-                ) : (
-                  <GripHorizontal />
-                )}
+                {isExpanded || isHovered || isMobileOpen ? "Menu" : <GripHorizontal />}
               </h2>
               {renderMenuItems(navItems, "main")}
             </div>
 
-            <div className="">
+            <div>
               <h2
                 className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
-                  !isExpanded && !isHovered
-                    ? "lg:justify-center"
-                    : "justify-start"
+                  !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
                 }`}
               >
-                {isExpanded || isHovered || isMobileOpen ? (
-                  "Others"
-                ) : (
-                  <GripHorizontal />
-                )}
+                {isExpanded || isHovered || isMobileOpen ? "Others" : <GripHorizontal />}
               </h2>
               {renderMenuItems(othersItems, "others")}
             </div>
