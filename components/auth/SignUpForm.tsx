@@ -7,6 +7,7 @@ import Link from "next/link";
 import React, { useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
+import SelectInputs from "../common/SelectInputs";
 
 export default function SignUpForm() {
   const [showPassword, setShowPassword] = useState(false);
@@ -16,7 +17,9 @@ export default function SignUpForm() {
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [role, setRole] = useState("student");
 
+  
   const router = useRouter();
   const supabase = createClient();
   
@@ -40,6 +43,9 @@ export default function SignUpForm() {
         data: {
           first_name: firstName,
           last_name: lastName,
+          email: email,
+          role: role,
+          is_checked: isChecked
         },
       },
     });
@@ -192,6 +198,20 @@ export default function SignUpForm() {
                       )}
                     </span>
                   </div>
+                </div>
+                <div className="sm:col-span-2">
+                  <Label>
+                    Ruolo<span className="text-error-500">*</span>
+                  </Label>
+                  <select
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 bg-white dark:bg-gray-900 dark:text-white dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  >
+                    <option value="student">Studente</option>
+                    <option value="coach">Coach</option>
+                    <option value="staff">Staff</option>
+                  </select>
                 </div>
                 {/* <!-- Checkbox --> */}
                 <div className="flex items-center gap-3">

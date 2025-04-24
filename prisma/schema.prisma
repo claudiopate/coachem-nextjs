@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model availability {
+  id        String   @id
+  dayOfWeek String
+  startTime String
+  endTime   String
+  profileId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  profiles  profiles @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, dayOfWeek, startTime, endTime])
+  @@index([dayOfWeek])
+  @@index([profileId])
+}
+
+model bookings {
+  id             String   @id
+  date           DateTime
+  startTime      String
+  endTime        String
+  type           String
+  status         String   @default("pending")
+  profileId      String
+  organizationId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime
+  profiles       profiles @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([date])
+  @@index([organizationId])
+  @@index([profileId])
+}
+
+model profiles {
+  id             String         @id
+  userId         String
+  organizationId String
+  name           String
+  email          String
+  image          String?
+  phone          String?
+  level          String?
+  preferredSport String?
+  notes          String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime
+  availability   availability[]
+  bookings       bookings[]
+
+  @@index([organizationId])
+  @@index([userId])
+}
