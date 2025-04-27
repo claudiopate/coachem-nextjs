@@ -44,7 +44,6 @@ export default function SignUpForm() {
           first_name: firstName,
           last_name: lastName,
           email: email,
-          role: role,
           is_checked: isChecked
         },
       },
