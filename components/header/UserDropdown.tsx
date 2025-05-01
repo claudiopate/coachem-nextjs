@@ -1,17 +1,43 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
+import { createClient } from "@/utils/supabase/client";
 
 export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
 
-function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
-  e.stopPropagation();
-  setIsOpen((prev) => !prev);
-}
+  useEffect(() => {
+    const getProfile = async () => {
+      try {
+        debugger
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+            return console.error("User not found");
+        }
+
+        const response = await fetch(`/api/profile/${user.id}`);
+        if (!response.ok) {
+          throw new Error('User not found');
+        }
+        const data = await response.json();
+        setProfile(data);
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      }
+    };
+
+    getProfile();
+  }, []);
+
+  function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+    e.stopPropagation();
+    setIsOpen((prev) => !prev);
+  }
 
   function closeDropdown() {
     setIsOpen(false);
@@ -60,10 +86,10 @@ function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
       >
         <div>
           <span className="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">
-            Musharof Chowdhury
+            {profile ? `${profile.firstName} ${profile.lastName}` : "Loading..."}
           </span>
           <span className="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">
-            randomuser@pimjo.com
+            {profile ? `${profile.email}` : "Loading..."}
           </span>
         </div>
 
