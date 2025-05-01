@@ -452,7 +452,7 @@ model Profile {
   lesson              Lesson[]
   users               users                 @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_id_fkey")
   profileAvailability ProfileAvailability[]
-  profileRole        ProfileRole[]
+  profileRole         ProfileRole[]
 
   @@map("profile")
   @@schema("public")
@@ -478,19 +478,19 @@ model ProfileAvailability {
 }
 
 model Role {
-  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime       @default(now()) @map("updated_at") @db.Timestamp(6)
-  name         String         @unique @default("student")
-  description  String?
-  profileRole  ProfileRole[]
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime      @default(now()) @map("updated_at") @db.Timestamp(6)
+  name        String        @unique @default("student")
+  description String?
+  profileRole ProfileRole[]
 
   @@map("role")
   @@schema("public")
 }
 
 model ProfileRole {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id        String   @id(map: "user_role_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamp(6)
   profileId String   @default(dbgenerated("gen_random_uuid()")) @map("profile_id") @db.Uuid
@@ -499,6 +499,19 @@ model ProfileRole {
   role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@map("profile_role")
+  @@schema("public")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model RolePermission {
+  id         String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime   @default(now()) @map("updated_at") @db.Timestamp(6)
+  roleType  role_type  @default(student) @map("role_type")
+  permission permission @default(lesson_read)
+
+  @@map("role_permission")
+  @@unique([permission, roleType], map: "role_permission_unique")
   @@schema("public")
 }
 
@@ -541,4 +554,22 @@ enum one_time_token_type {
   phone_change_token
 
   @@schema("auth")
+}
+
+enum permission {
+  lesson_delete @map("lesson.delete")
+  lesson_read   @map("lesson.read")
+  lesson_create @map("lesson.create")
+  lesson_update @map("lesson.update")
+
+  @@schema("public")
+}
+
+enum role_type {
+  admin
+  student
+  coach
+  staff
+
+  @@schema("public")
 }
