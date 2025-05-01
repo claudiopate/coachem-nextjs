@@ -13,7 +13,6 @@ export default function UserDropdown() {
   useEffect(() => {
     const getProfile = async () => {
       try {
-        debugger
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) {
@@ -57,7 +56,9 @@ export default function UserDropdown() {
           />
         </span>
 
-        <span className="block mr-1 font-medium text-theme-sm">Musharof</span>
+        <span className="block mr-1 font-medium text-theme-sm">
+          {profile ? `${profile.firstName} ${profile.lastName}` : "Loading..."}
+        </span>
 
         <svg
           className={`stroke-gray-500 dark:stroke-gray-400 transition-transform duration-200 ${
