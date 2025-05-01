@@ -1,6 +1,5 @@
 "use client";
 import Image from "next/image";
-import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
@@ -10,11 +9,14 @@ import { createClient } from "@/utils/supabase/client";
 export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const [profile, setProfile] = useState<any>(null);
-
+  
   const supabase = createClient();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    if (window.location.pathname === "/") {
+      window.location.reload(); // forza il reload se sei già sulla home
+    }
   };
 
 

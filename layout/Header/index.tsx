@@ -5,33 +5,37 @@ import Link from "next/link";
 import React, { useState, useEffect, useRef } from "react";
 import menuData from "./menuData";
 import { usePathname } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
 import UserDropdown from "@/components/header/UserDropdown";
-
+import { createClient } from "@/utils/supabase/client";
 
 const HomeHeader: React.FC = () => {
-  const [navigationOpen] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
   const [dropdownToggler, setDropdownToggler] = useState(false);
-  const [isApplicationMenuOpen, setApplicationMenuOpen] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+
+  const supabase = createClient();
 
   const pathUrl = usePathname();
 
-  const toggleApplicationMenu = () => {
-    setApplicationMenuOpen(!isApplicationMenuOpen);
-  };
-
   useEffect(() => {
-  
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key === "k") {
-        event.preventDefault();
-        inputRef.current?.focus();
+    const getProfile = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+            return console.error("User not found");
+        }
+
+        const response = await fetch(`/api/profile/${user.id}`);
+        if (!response.ok) {
+          throw new Error('User not found');
+        }
+        const data = await response.json();
+        setProfile(data);
+      } catch (error) {
+        console.error('Error fetching profile:', error);
       }
     };
 
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    getProfile();
   }, []);
 
   return (
@@ -106,7 +110,7 @@ const HomeHeader: React.FC = () => {
 
         {/* Auth Buttons */}
         <div className="flex items-center gap-3">
-          {!false ? (
+          {!profile ? (
             <>
               <button className="rounded-md border border-primary px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10">
                   <Link
