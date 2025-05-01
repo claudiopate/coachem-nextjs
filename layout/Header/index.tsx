@@ -9,23 +9,11 @@ import { createClient } from "@/utils/supabase/client";
 import UserDropdown from "@/components/header/UserDropdown";
 
 
-const Header: React.FC = () => {
+const HomeHeader: React.FC = () => {
   const [navigationOpen] = useState(false);
   const [dropdownToggler, setDropdownToggler] = useState(false);
   const [isApplicationMenuOpen, setApplicationMenuOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  const supabase = createClient();
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-  };
-
-  const handleSignUp = async () => {
-    const { data, error } = await supabase.auth.signUp({
-      email: 'example@email.com',
-      password: 'example-password',
-    })
-  };
 
   const pathUrl = usePathname();
 
@@ -34,8 +22,7 @@ const Header: React.FC = () => {
   };
 
   useEffect(() => {
-    
-
+  
     const handleKeyDown = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key === "k") {
         event.preventDefault();
@@ -147,4 +134,4 @@ const Header: React.FC = () => {
   );
 };
 
-export default Header;
+export default HomeHeader;

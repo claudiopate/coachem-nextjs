@@ -1,6 +1,6 @@
 import { Outfit } from 'next/font/google';
 
-import Header from '@/layout/Header';
+import HomeHeader from '@/layout/Header';
 import Hero from '@/components/hero';
 import Feature from '@/components/feature';
 import JoinUs from '@/components/join_us';
@@ -12,7 +12,7 @@ const outfit = Outfit({
 export default function Home() {
   return (
     <div>
-      <Header />
+      <HomeHeader />
       <main className="relative overflow-hidden">
       <Hero />
       <Feature />

@@ -6,14 +6,22 @@ import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { createClient } from "@/utils/supabase/client";
 
+
 export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const [profile, setProfile] = useState<any>(null);
 
+  const supabase = createClient();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+
+
+
   useEffect(() => {
     const getProfile = async () => {
       try {
-        const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) {
             return console.error("User not found");
@@ -171,8 +179,13 @@ export default function UserDropdown() {
             </DropdownItem>
           </li>
         </ul>
-        <Link
-          href="/signin"
+        <DropdownItem
+          onItemClick={ () => {
+            handleLogout()
+            closeDropdown()
+          }}
+          tag="a"
+          href="/"
           className="flex items-center gap-3 px-3 py-2 mt-3 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
         >
           <svg
@@ -191,7 +204,7 @@ export default function UserDropdown() {
             />
           </svg>
           Sign out
-        </Link>
+        </DropdownItem>
       </Dropdown>
     </div>
   );
