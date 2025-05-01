@@ -21,7 +21,6 @@ const DashboardHeaderToggleMenu: React.FC<Props> = (
   const { isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
 
   const handleToggle = () => {
-    debugger
     if (window.innerWidth >= 1024) {
       toggleSidebar();
     } else {

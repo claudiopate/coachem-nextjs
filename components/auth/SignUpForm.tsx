@@ -25,7 +25,6 @@ export default function SignUpForm() {
   
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();  
-    debugger;
     if (password.length < 6) {
       alert("Password must be at least 6 characters");
       return;

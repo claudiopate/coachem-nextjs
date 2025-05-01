@@ -452,7 +452,7 @@ model Profile {
   lesson              Lesson[]
   users               users                 @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_id_fkey")
   profileAvailability ProfileAvailability[]
-  userRole            UserRole[]
+  profileRole        ProfileRole[]
 
   @@map("profile")
   @@schema("public")
@@ -478,18 +478,18 @@ model ProfileAvailability {
 }
 
 model Role {
-  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime   @default(now()) @map("updated_at") @db.Timestamp(6)
-  name        String     @unique @default("student")
-  description String?
-  userRole    UserRole[]
+  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime       @default(now()) @map("updated_at") @db.Timestamp(6)
+  name         String         @unique @default("student")
+  description  String?
+  profileRole  ProfileRole[]
 
   @@map("role")
   @@schema("public")
 }
 
-model UserRole {
+model ProfileRole {
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamp(6)
@@ -498,7 +498,7 @@ model UserRole {
   profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
   role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
-  @@map("user_role")
+  @@map("profile_role")
   @@schema("public")
 }
 

@@ -22,7 +22,6 @@ export default function SignInForm() {
 
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault(); // Evita il comportamento di default del form
-    debugger;
     try {
       // Effettua il login con email e password
       const { data, error } = await supabase.auth.signInWithPassword({
