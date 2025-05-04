@@ -1,5 +1,6 @@
 "use client";
 
+import { AuthRoleProvider } from "@/context/auth/AuthRoleProvider";
 import { useSidebar } from "@/context/SidebarContext";
 import AppSidebar from "@/layout/AppSidebar";
 import Backdrop from "@/layout/Backdrop";
@@ -20,11 +21,13 @@ export default function PageLayout({
 
   return (
     <div className="min-h-screen xl:flex">
-      <AppSidebar />
-      <Backdrop />
-      <div className={`flex-1 transition-all duration-300 ease-in-out ${mainContentMargin}`}>
-        <div className="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">{children}</div>
-      </div>
+      <AuthRoleProvider>
+        <AppSidebar />
+        <Backdrop />
+        <div className={`flex-1 transition-all duration-300 ease-in-out ${mainContentMargin}`}>
+          <div className="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">{children}</div>
+        </div>
+      </AuthRoleProvider>
     </div>
   );
 }

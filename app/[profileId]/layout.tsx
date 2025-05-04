@@ -10,13 +10,13 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ThemeProvider>
-      <SidebarProvider>
-        <PageLayout>
-          <DashboardHeader  />
-          {children}
-          </PageLayout>
-      </SidebarProvider>
-    </ThemeProvider>
+      <ThemeProvider>
+        <SidebarProvider>
+          <PageLayout>
+            <DashboardHeader  />
+            {children}
+            </PageLayout>
+        </SidebarProvider>
+      </ThemeProvider>
   );
 }

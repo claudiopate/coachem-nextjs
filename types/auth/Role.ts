@@ -1,0 +1,1 @@
+export type Role = 'coach' | 'student' | 'admin' | 'staff'; // estendibile
