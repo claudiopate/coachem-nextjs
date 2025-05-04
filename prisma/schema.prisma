@@ -383,7 +383,6 @@ model Group {
   gender       String?
   notes        String?
   profileId    String         @default(dbgenerated("gen_random_uuid()")) @map("profile_id") @db.Uuid
-  profile      Profile        @relation(fields: [profileId], references: [id], onDelete: Cascade, map: "group_owner_id_fkey")
   groupProfile GroupProfile[]
   lesson       Lesson[]
 
@@ -409,19 +408,21 @@ model GroupProfile {
 }
 
 model Lesson {
-  id         String       @id(map: "bookings_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  startTime  DateTime     @map("start_time") @db.Timetz(6)
-  endTime    DateTime     @map("end_time") @db.Timetz(6)
-  status     String       @default("pending")
-  groupId    String       @default(dbgenerated("gen_random_uuid()")) @map("group_id") @db.Uuid
-  coachId    String       @default(dbgenerated("gen_random_uuid()")) @map("coach_id") @db.Uuid
-  createdAt  DateTime     @default(now()) @map("created_at")
-  updatedAt  DateTime?    @map("updated_at")
-  courtId    String       @default(dbgenerated("gen_random_uuid()")) @map("court_id") @db.Uuid
-  attendance Attendance[]
-  profile    Profile      @relation(fields: [coachId], references: [id], onDelete: SetNull)
-  court      Court        @relation(fields: [courtId], references: [id])
-  group      Group        @relation(fields: [groupId], references: [id])
+  id                                 String       @id(map: "bookings_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  startTime                          DateTime     @map("start_time") @db.Timetz(6)
+  endTime                            DateTime     @map("end_time") @db.Timetz(6)
+  status                             String       @default("pending")
+  groupId                            String?      @default(dbgenerated("gen_random_uuid()")) @map("group_id") @db.Uuid
+  coachId                            String       @default(dbgenerated("gen_random_uuid()")) @map("coach_id") @db.Uuid
+  createdAt                          DateTime     @default(now()) @map("created_at")
+  updatedAt                          DateTime?    @map("updated_at")
+  courtId                            String       @default(dbgenerated("gen_random_uuid()")) @map("court_id") @db.Uuid
+  profile_id                         String?      @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  attendance                         Attendance[]
+  profile                            Profile      @relation(fields: [coachId], references: [id], onDelete: SetNull)
+  court                              Court        @relation(fields: [courtId], references: [id])
+  group                              Group?       @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  profile_lesson_profile_idToprofile Profile?     @relation("lesson_profile_idToprofile", fields: [profile_id], references: [id])
 
   @@unique([groupId, courtId, coachId], map: "group_id_court_id_coach_id_uniquess")
   @@index([coachId], map: "bookings_organizationId_idx")
@@ -431,28 +432,30 @@ model Lesson {
 }
 
 model Profile {
-  id                  String                @id(map: "user_pkey") @db.Uuid
-  firstName           String                @map("first_name")
-  lastName            String                @map("last_name")
-  email               String                @unique(map: "user_email_key")
-  image               String?
-  phone               String?
-  level               String?
-  preferredSport      String?               @map("preferred_sport")
-  notes               String?
-  createdAt           DateTime              @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt           DateTime              @default(now()) @map("updated_at") @db.Timestamp(6)
-  isChecked           Boolean               @default(false) @map("is_checked")
-  bestRanking         String?               @map("best_ranking")
-  certifications      String[]
-  actualRanking       String?               @map("actual_ranking")
-  carrerNotes         String?               @map("carrer_notes")
-  group               Group[]
-  groupProfile        GroupProfile[]
-  lesson              Lesson[]
-  users               users                 @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_id_fkey")
-  profileAvailability ProfileAvailability[]
-  profileRole         ProfileRole[]
+  id                                              String                @id(map: "user_pkey") @db.Uuid
+  firstName                                       String                @map("first_name")
+  lastName                                        String                @map("last_name")
+  email                                           String                @unique(map: "user_email_key")
+  image                                           String?
+  phone                                           String?
+  level                                           String?
+  preferredSport                                  String?               @map("preferred_sport")
+  notes                                           String?
+  createdAt                                       DateTime              @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt                                       DateTime              @default(now()) @map("updated_at") @db.Timestamp(6)
+  isChecked                                       Boolean               @default(false) @map("is_checked")
+  bestRanking                                     String?               @map("best_ranking")
+  certifications                                  String[]
+  actualRanking                                   String?               @map("actual_ranking")
+  carrerNotes                                     String?               @map("carrer_notes")
+  coach_student_coach_student_coach_idToprofile   CoachStudent[]       @relation("coach_student_coach_idToprofile")
+  coach_student_coach_student_student_idToprofile CoachStudent[]       @relation("coach_student_student_idToprofile")
+  groupProfile                                    GroupProfile[]
+  lesson                                          Lesson[]
+  lesson_lesson_profile_idToprofile               Lesson[]              @relation("lesson_profile_idToprofile")
+  users                                           users                 @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_id_fkey")
+  profileAvailability                             ProfileAvailability[]
+  profileRole                                     ProfileRole[]
 
   @@map("profile")
   @@schema("public")
@@ -505,14 +508,30 @@ model ProfileRole {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model RolePermission {
   id         String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  createdAt DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime   @default(now()) @map("updated_at") @db.Timestamp(6)
-  roleType  role_type  @default(student) @map("role_type")
+  createdAt  DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime   @default(now()) @map("updated_at") @db.Timestamp(6)
+  roleType   role_type  @default(student) @map("role_type")
   permission permission @default(lesson_read)
 
-  @@map("role_permission")
   @@unique([permission, roleType], map: "role_permission_unique")
+  @@map("role_permission")
   @@schema("public")
+}
+
+model CoachStudent {
+  id                                        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  coachId                                  String    @db.Uuid @map("coach_id")
+  studentId                                String    @db.Uuid @map("student_id")
+  createdAt                                DateTime? @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt                                DateTime? @default(now()) @db.Timestamptz(6) @map("updated_at")
+  profile_coach_student_coach_idToprofile   Profile   @relation("coach_student_coach_idToprofile", fields: [coachId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_coach")
+  profile_coach_student_student_idToprofile Profile   @relation("coach_student_student_idToprofile", fields: [studentId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_student")
+
+  @@unique([coachId, studentId], map: "unique_coach_student")
+  @@index([coachId], map: "idx_coach_id")
+  @@index([studentId], map: "idx_student_id")
+  @@schema("public")
+  @@map("coach_student")
 }
 
 enum aal_level {
