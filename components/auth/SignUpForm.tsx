@@ -7,7 +7,7 @@ import Link from "next/link";
 import React, { useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
-import SelectInputs from "../common/SelectInputs";
+import { prismaClient } from '@/utils/prisma/client';
 
 export default function SignUpForm() {
   const [showPassword, setShowPassword] = useState(false);
@@ -43,15 +43,33 @@ export default function SignUpForm() {
           first_name: firstName,
           last_name: lastName,
           email: email,
-          is_checked: isChecked
+          is_checked: isChecked,
+          role: role
         },
       },
     });
 
+  
     if (error) {
       console.error("Signup error:", error.message);
       alert("Signup failed: " + error.message);
     } else {
+
+      debugger
+      const profileId = data.user?.id;
+      if (!profileId) {
+        console.error("Profile ID is null");
+        alert("Signup failed: Unable to retrieve profile ID.");
+        return;
+      }
+
+      // 2. Chiama la route API per creare Profile + ProfileRole
+      await fetch(`/api/profile_role/${profileId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: role }),
+      });
+      
       console.log("Redirecting...")
       router.push("/auth/signin");
     }

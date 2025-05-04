@@ -30,3 +30,28 @@ export async function GET(
         return NextResponse.json({ message: 'Server error' }, { status: 500 });
     }
 }
+
+
+export async function createProfileRole(req: Request) {
+    debugger
+    
+    const { profileId, role } = await req.json();
+
+    const roleRecord = await prismaClient.role.findUnique({
+            where: { name: role },
+    });
+  
+    if (!roleRecord) {
+        throw new Error(`Role "${role}" not found`);
+    }
+
+    // 3. Crea la relazione profile_role
+    await prismaClient.profileRole.create({
+        data: {
+        profileId: profileId,
+        roleId: roleRecord.id,
+        },
+    });
+
+  return NextResponse.json({ success: true });
+}
