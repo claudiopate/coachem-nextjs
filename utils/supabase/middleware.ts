@@ -37,6 +37,19 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  if (!user) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
+  const pathname = request.nextUrl.pathname;
+  const segments = pathname.split('/').filter(Boolean); // rimuove segmenti vuoti causati da doppie barre
+
+  const userIdFromPath = segments[0]; // primo segmento dell'URL
+
+  if (user.id !== userIdFromPath) {
+    return NextResponse.json({ error: 'Access Denied' }, { status: 403 });
+  }
+
   if (
     !user &&
     !request.nextUrl.pathname.startsWith('/auth/signin') &&

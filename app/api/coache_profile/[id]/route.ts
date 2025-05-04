@@ -17,15 +17,25 @@ export async function GET(
         );
         }
 
-        const profile = await prismaClient.profile.findUnique({
-        where: { id: profileId },
-        });
+        const students = await prismaClient.coachProfile.findMany({
+            where: {
+              coachId: profileId,
+            },
+            include: {
+              profile_coach_profile_profile_idToprofile: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+            },
+          });
 
-        if (!profile) {
-        return NextResponse.json({ message: 'Profile not found' }, { status: 404 });
+        if (!students) {
+        return NextResponse.json({ message: 'Students not found' }, { status: 404 });
         }
 
-        return NextResponse.json(profile);
+        return NextResponse.json(students, { status: 200 });
     } catch (error) {
         return NextResponse.json({ message: 'Server error' }, { status: 500 });
     }

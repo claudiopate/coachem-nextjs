@@ -448,8 +448,8 @@ model Profile {
   certifications                                  String[]
   actualRanking                                   String?               @map("actual_ranking")
   carrerNotes                                     String?               @map("carrer_notes")
-  coach_profile_coach_profile_profile_idToprofile coach_profile[]       @relation("coach_profile_profile_idToprofile")
-  coach_profile_coach_profile_coach_idToprofile   coach_profile[]       @relation("coach_profile_coach_idToprofile")
+  coach_profile_coach_profile_profile_idToprofile CoachProfile[]       @relation("coach_profile_profile_idToprofile")
+  coach_profile_coach_profile_coach_idToprofile   CoachProfile[]       @relation("coach_profile_coach_idToprofile")
   groupProfile                                    GroupProfile[]
   lesson                                          Lesson[]
   lesson_lesson_profile_idToprofile               Lesson[]              @relation("lesson_profile_idToprofile")
@@ -531,7 +531,7 @@ model CoachProfile {
   @@index([coachId], map: "idx_coach_id")
   @@index([profileId], map: "idx_student_id")
   @@schema("public")
-  @@map("coach_student")
+  @@map("coach_profile")
 }
 
 enum aal_level {
