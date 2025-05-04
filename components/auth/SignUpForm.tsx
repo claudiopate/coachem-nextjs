@@ -63,7 +63,7 @@ export default function SignUpForm() {
         return;
       }
 
-      // 2. Chiama la route API per creare Profile + ProfileRole
+      // 2. Chiama la route API per creare ProfileRole
       await fetch(`/api/profile_role/${profileId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
