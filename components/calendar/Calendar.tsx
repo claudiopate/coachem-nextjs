@@ -152,7 +152,7 @@ const Calendar: React.FC = () => {
     setSelectedProfilesGroup([]);
   };
 
-  const isCoach = role === "coach" || role === "student";
+  const isCoach = role === "coach";
 
   const customButtons = isCoach
     ? {
@@ -166,7 +166,7 @@ const Calendar: React.FC = () => {
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-      <RoleBasedAccess allowedRoles={["coach", "student"]}>
+      <RoleBasedAccess allowedRoles={["coach"]}>
         <div className="custom-calendar">
           <FullCalendar
             ref={calendarRef}

@@ -3,8 +3,7 @@
 import { ThemeToggleButton } from "@/components/common/ThemeToggleButton";
 import NotificationDropdown from "@/components/header/NotificationDropdown";
 import UserDropdown from "@/components/header/UserDropdown";
-import { useSidebar } from "@/context/SidebarContext";
-import React, { useState } from "react";
+import React from "react";
 
 interface Props {
   isApplicationMenuOpen: boolean;

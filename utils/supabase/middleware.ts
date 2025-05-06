@@ -44,7 +44,7 @@ export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const segments = pathname.split('/').filter(Boolean); // rimuove segmenti vuoti causati da doppie barre
 
-  const userIdFromPath = segments[0]; // primo segmento dell'URL
+  const userIdFromPath = segments[1]; // secodo segmento dell'URL
 
   if (user.id !== userIdFromPath) {
     return NextResponse.json({ error: 'Access Denied' }, { status: 403 });

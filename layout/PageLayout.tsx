@@ -1,7 +1,6 @@
 "use client";
 
-import DashboardHeader from "@/app/[profileId]/dashboard/Header/DashboardHeader";
-import DashboardHeaderClient from "@/app/[profileId]/dashboard/Header/DashboardHeaderClient";
+import DashboardHeaderClient from "@/components/header/DashboardHeaderClient";
 import { AuthRoleProvider } from "@/context/auth/AuthRoleProvider";
 import { useSidebar } from "@/context/SidebarContext";
 import React from "react";

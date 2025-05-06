@@ -36,7 +36,7 @@ export default function SignInForm() {
 
       // Se il login è riuscito, redirigi alla pagina del dashboard dell'utente
       if (data) {
-        router.push(`/${data.user.id}/dashboard`);
+        router.push(`/profile/${data.user.id}/dashboard`);
       }
     } catch (error) {
       console.error("Errore durante il login:", error);

@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useSidebar } from "../context/SidebarContext";
+import { createClient } from "@/utils/supabase/client";
 import {
   BoxIcon,
   Calendar,
@@ -17,6 +18,8 @@ import {
   TableIcon,
   UserCircle,
 } from "lucide-react"
+import { useParams } from 'next/navigation';
+
 
 type NavItem = {
   name: string;
@@ -38,18 +41,14 @@ const navItems: NavItem[] = [
   }
 ];
 
+type Props = {
+  authProfileId: string;
+};
 
-const AppSidebar: React.FC = () => {
+const AppSidebar: React.FC<Props> = ({ authProfileId }) => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const pathname = usePathname();
-  const regex = /^\/([a-f0-9\-]{36})/;
-  const match = pathname.match(regex);
-  
-  let userId = null;
-  if (match) {
-    userId = match[1]; 
-  }
-  
+
   const renderMenuItems = (
     navItems: NavItem[],
     menuType: "main" | "others"
@@ -59,12 +58,12 @@ const AppSidebar: React.FC = () => {
         <li key={nav.name}>
           { nav.path && (
               <Link
-                href={`/${userId}${nav.path}`} // Usa userId dinamico qui
-                className={`menu-item group ${pathname === `/${userId}${nav.path}` ? "menu-item-active" : "menu-item-inactive"}`}
+                href={`/profile/${authProfileId}/${nav.path}`} // Usa userId dinamico qui
+                className={`menu-item group ${pathname === `/profile/${authProfileId}/${nav.path}` ? "menu-item-active" : "menu-item-inactive"}`}
               >
                 <span
                   className={`${
-                    pathname === `/${userId}${nav.path}`
+                    pathname === `/profile/${authProfileId}/${nav.path}`
                       ? "menu-item-icon-active"
                       : "menu-item-icon-inactive"
                   }`}
