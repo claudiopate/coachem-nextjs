@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Modal } from "../ui/modal";
 import Select, { MultiValue } from "react-select";
+import { createClient } from "@/utils/supabase/client";
 
 interface EventModalProps {
   isOpen: boolean;
@@ -15,7 +16,6 @@ interface EventModalProps {
   setEventEndDate: (date: string) => void;
   onSubmit: () => void;
   selectedEvent: boolean;
-  profiles: { id: string; name: string }[]; // Lista dei profili
 }
 
 const LessonModal: React.FC<EventModalProps> = ({
@@ -28,15 +28,57 @@ const LessonModal: React.FC<EventModalProps> = ({
   eventEndDate,
   setEventEndDate,
   onSubmit,
-  selectedEvent,
-  profiles,
+  selectedEvent
 }) => {
+  
+  const supabase = createClient();  
+  
+  const [profiles, setProfiles] = useState<any[]>([]);
   const [lessonType, setLessonType] = useState<"single" | "group">("single");
+  
   // SINGLE: deve supportare selezioni multiple → array
   const [selectedProfiles, setSelectedProfiles] = useState<MultiValue<any>>([]);
+  const [profileOptions, setProfileOptions] = useState<String[]>([]);
 
   // GROUP: deve supportare una sola selezione → oggetto singolo o null
   const [selectedProfileGroup, setSelectedProfileGroup] = useState<any | null>(null); 
+  const [groupOptions, setGroupOptions] = useState<String[]>([]);
+
+  useEffect(() => {
+
+    debugger
+    if (lessonType === "single") {
+      const fetchProfilesByCoach = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        const res = await fetch(`/api/coach-profile/${user?.id}`);
+        const response = await res.json();
+        const options =  response.data.map((p: any) => ({
+          value: p.id,
+          label: p.name,
+        }));
+        setProfileOptions(options);
+      };
+    
+      fetchProfilesByCoach();
+    }
+    else if (lessonType === "group") {
+      const fetchGroupsByCoach = async () => {
+        const { data: { user } } = await supabase.auth.getUser()
+        const res = await fetch(`/api/coach-group/${user?.id}`);
+        const data = await res.json();
+        const options = data.map((p: any) => ({
+          value: p.id,
+          label: p.name,
+        }));
+        setGroupOptions(options);
+      };
+    
+      fetchGroupsByCoach();
+    }
+
+  }, [lessonType]);
+
+    
 
   // Reset dei campi extra
   const resetModalFields = () => {
@@ -47,10 +89,20 @@ const LessonModal: React.FC<EventModalProps> = ({
     setSelectedProfileGroup(null);
   };
 
+  const handleClose = () => {
+    resetModalFields();
+    onClose();
+  };
+
+  const handleSubmit = () => {
+    onSubmit(); // chiamata esterna per salvare
+    resetModalFields(); // resetta lo stato interno
+  };
+
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleClose}
       className="max-w-[700px] p-6 lg:p-10"
     >
       <div className="flex flex-col px-2 overflow-y-auto custom-scrollbar">
@@ -119,10 +171,7 @@ const LessonModal: React.FC<EventModalProps> = ({
                 isMulti
                 value={selectedProfiles}
                 onChange={setSelectedProfiles}
-                options={profiles.map((profile) => ({
-                  value: profile.id,
-                  label: profile.name,
-                }))}
+                options={profileOptions}
                 className="w-full"
                 isClearable
                 closeMenuOnSelect={false}
@@ -139,10 +188,7 @@ const LessonModal: React.FC<EventModalProps> = ({
                 isMulti={false}
                 value={selectedProfileGroup}
                 onChange={setSelectedProfileGroup}
-                options={profiles.map((profile) => ({
-                  value: profile.id,
-                  label: profile.name,
-                }))}
+                options={groupOptions}
                 className="w-full"
                 isClearable
               />
@@ -178,14 +224,14 @@ const LessonModal: React.FC<EventModalProps> = ({
 
         <div className="flex items-center gap-3 mt-6 modal-footer sm:justify-end">
           <button
-            onClick={onClose}
+            onClick={handleClose}
             type="button"
             className="flex w-full justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] sm:w-auto"
           >
             Close
           </button>
           <button
-            onClick={onSubmit}
+            onClick={handleSubmit}
             type="button"
             className="btn btn-success btn-update-event flex w-full justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600 sm:w-auto"
           >

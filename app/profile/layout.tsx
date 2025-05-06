@@ -7,7 +7,7 @@ import { createClient } from "@/utils/supabase/server";
 
 export default async function DashboardLayout({
   children,
-}: {
+}: {us
   children: React.ReactNode;
 }) {
   const supabase = await createClient(); // <- await qui, perché è async!
@@ -20,18 +20,17 @@ export default async function DashboardLayout({
     // Puoi eventualmente fare redirect o renderizzare qualcosa
   }
 
-  console.log("User from DashboardLayout:", user);
   const authProfileId = user?.id;
 
   return (
-      <ThemeProvider>
-        <SidebarProvider>
-          {authProfileId && <AppSidebar authProfileId={authProfileId} />}
-          <Backdrop />
-          <PageLayout>
-            {children}
-          </PageLayout>
-        </SidebarProvider>
-      </ThemeProvider>
+    <ThemeProvider>
+      <SidebarProvider>
+        {authProfileId && <AppSidebar authProfileId={authProfileId} />}
+        <Backdrop />
+        <PageLayout>
+          {children}
+        </PageLayout>
+      </SidebarProvider>
+    </ThemeProvider>
   );
 }

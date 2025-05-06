@@ -196,7 +196,6 @@ const Calendar: React.FC = () => {
           setEventStartDate={setEventStartDate}
           eventEndDate={eventEndDate}
           setEventEndDate={setEventEndDate}
-          profiles={profiles}
         />
       </RoleBasedAccess>
     </div>
