@@ -3,10 +3,10 @@ import { prismaClient } from '@/utils/prisma/client';
 import { createServerClient } from '@/utils/supabase/server';
 
 export async function GET(
-  req: Request, context: { params: { id: string } }
+  request: Request,
+  context: { params: { id: string } }
 ) {
-  try {
-    const { id } = context.params;
+  const id = context.params.id;
 
     const supabase = await createServerClient();
     const { data: { user }, error: userError } = await supabase.auth.getUser();
