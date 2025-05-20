@@ -10,146 +10,347 @@ import {
   EventClickArg,
   EventContentArg,
 } from "@fullcalendar/core";
-import { useModal } from "@/hooks/useModal";
 import RoleBasedAccess from "../auth/RoleBasedAccess";
 import { useAuthRole } from "@/context/auth/AuthRoleProvider";
 import LessonModal from "./LessonModal";
+import { useProfile } from "@/context/profile/ProfileProvider";
+import { createClient } from "@/utils/supabase/client";
+import "./Calendar.module.css";
+import DeleteConfirmationModal from './DeleteConfirmationModal';
 
 interface CalendarEvent extends EventInput {
   extendedProps: {
-    calendar: string;
-    profiles?: any[];
-    type?: "single" | "group";
+    type: "individual" | "group";
+    coach: string;
+    participants: Array<{
+      id: string;
+      name: string;
+    }>;
+    location?: string;
   };
 }
 
-const Calendar: React.FC = () => {
+interface CalendarProps {
+  profileId: string;
+  onEventsLoaded?: (events: CalendarEvent[]) => void;
+  selectedEvent?: CalendarEvent | null;
+  isModalOpen?: boolean;
+  onModalClose?: () => void;
+  onEventClick?: (event: CalendarEvent) => void;
+  onLessonUpdate?: () => void;
+}
+
+const Calendar: React.FC<CalendarProps> = ({ 
+  profileId, 
+  onEventsLoaded,
+  selectedEvent: externalSelectedEvent,
+  isModalOpen: externalIsModalOpen,
+  onModalClose: externalOnModalClose,
+  onEventClick: externalOnEventClick,
+  onLessonUpdate
+}) => {
+  // Utility functions
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  const toLocalISOString = (d: Date) =>
+    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [eventTitle, setEventTitle] = useState("");
   const [eventStartDate, setEventStartDate] = useState("");
   const [eventEndDate, setEventEndDate] = useState("");
   const [eventLevel, setEventLevel] = useState("");
-  const [lessonType, setLessonType] = useState<"single" | "group">("single");
+  const [lessonType, setLessonType] = useState<"individual" | "group">("individual");
   const [selectedProfile, setSelectedProfile] = useState<any | null>(null);
   const [selectedProfilesGroup, setSelectedProfilesGroup] = useState<any[]>([]);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isFetchingEvents, setIsFetchingEvents] = useState(false);
   const calendarRef = useRef<FullCalendar>(null);
-  const { isOpen, openModal, closeModal } = useModal();
+  const lastFetchId = useRef(0);
   const { role } = useAuthRole();
+  const { profile } = useProfile();
+  const supabase = createClient();
+  const [error, setError] = useState<string | null>(null);
+  const [lessonToDelete, setLessonToDelete] = useState<CalendarEvent | null>(null);
+  const [internalRefreshTrigger, setInternalRefreshTrigger] = useState(0);
+  const [showModal, setShowModal] = useState(false);
 
-  // Mock profili
-  const profiles = [
-    { id: "1", name: "Mario Rossi" },
-    { id: "2", name: "Luca Bianchi" },
-    { id: "3", name: "Anna Verdi" },
-  ];
-
-  useEffect(() => {
-    setEvents([
-      {
-        id: "1",
-        title: "Event Conf.",
-        start: new Date().toISOString().split("T")[0],
-        extendedProps: { calendar: "Danger" },
-      },
-      {
-        id: "2",
-        title: "Meeting",
-        start: new Date(Date.now() + 86400000).toISOString().split("T")[0],
-        extendedProps: { calendar: "Success" },
-      },
-      {
-        id: "3",
-        title: "Workshop",
-        start: new Date(Date.now() + 172800000).toISOString().split("T")[0],
-        end: new Date(Date.now() + 259200000).toISOString().split("T")[0],
-        extendedProps: { calendar: "Primary" },
-      },
-    ]);
-  }, []);
-
-  const formatDateForLocalInput = (date: Date): string => {
-    const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, "0");
-    const day = date.getDate().toString().padStart(2, "0");
-    const hours = date.getHours().toString().padStart(2, "0");
-    const minutes = date.getMinutes().toString().padStart(2, "0");
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  const handleModalClose = () => {
+    setShowModal(false);
+    resetModalFields();
+    // Notify parent if they're interested
+    if (externalOnModalClose) {
+      externalOnModalClose();
+    }
   };
 
+  const handleModalOpen = () => {
+    console.log("Opening modal"); // Debug log
+    setShowModal(true);
+  };
+
+  // Effect to handle external event selection
+  useEffect(() => {
+    if (externalSelectedEvent) {
+      handleEventSelection(externalSelectedEvent);
+    }
+  }, [externalSelectedEvent]);
+
+  const handleEventSelection = (event: CalendarEvent) => {
+    setIsEditing(true);
+    setSelectedEvent(event);
+    setEventTitle(event.title || '');
+    
+    const startDate = typeof event.start === 'string' ? new Date(event.start) : 
+                     event.start instanceof Date ? event.start : new Date();
+    const endDate = typeof event.end === 'string' ? new Date(event.end) :
+                   event.end instanceof Date ? event.end : startDate;
+    
+    setEventStartDate(toLocalISOString(startDate));
+    setEventEndDate(toLocalISOString(endDate));
+    setLessonType(event.extendedProps.type);
+    
+    if (event.extendedProps.type === "group") {
+      setSelectedProfilesGroup(event.extendedProps.participants || []);
+    } else {
+      setSelectedProfile(event.extendedProps.participants[0] || null);
+    }
+    handleModalOpen();
+  };
+
+  const handleEventClick = (clickInfo: EventClickArg) => {
+    const event = clickInfo.event;
+    const calendarEvent = event as unknown as CalendarEvent;
+    
+    if (externalOnEventClick) {
+      externalOnEventClick(calendarEvent);
+    }
+    handleEventSelection(calendarEvent);
+  };
+
+  const computeRange = (range: {start: Date, end: Date}) => {
+    const start = new Date(range.start.getFullYear(), range.start.getMonth(), 1);
+    const end = new Date(range.end.getFullYear(), range.end.getMonth() + 1, 0);
+    return { start, end };
+  };
+
+  // Funzione di confronto tra due range
+  const isSameRange = (a: {start: Date, end: Date} | null, b: {start: Date, end: Date} | null) => {
+    if (!a || !b) return false;
+    return a.start.getTime() === b.start.getTime() && a.end.getTime() === b.end.getTime();
+  };
+
+  const fetchLessons = async (start: Date, end: Date) => {
+    if (!profile) return;
+    
+    const currentFetchId = ++lastFetchId.current;
+    
+    try {
+      setIsFetchingEvents(true);
+      setError(null);
+      
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        setError('Authentication error: Unable to fetch user data');
+        return;
+      }
+
+      let url = `/api/profile/${user.id}/lessons?start=${encodeURIComponent(start.toISOString())}&end=${encodeURIComponent(end.toISOString())}`;
+      
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${user.id}`
+        }
+      });
+
+      if (currentFetchId !== lastFetchId.current) {
+        return;
+      }
+
+      if (!response.ok) {
+        setError(`Failed to fetch lessons: ${response.statusText}`);
+        return;
+      }
+
+      const lessons: CalendarEvent[] = await response.json();
+      
+      if (currentFetchId !== lastFetchId.current) {
+        return;
+      }
+
+      setEvents(lessons);
+      
+      if (onEventsLoaded) {
+        onEventsLoaded(lessons);
+      }
+    } catch (error) {
+      if (currentFetchId !== lastFetchId.current) {
+        return;
+      }
+      setError('Failed to fetch lessons. Please try again later.');
+    } finally {
+      if (currentFetchId === lastFetchId.current) {
+        setIsFetchingEvents(false);
+      }
+    }
+  };
+
+  // Add effect to handle refresh trigger
+  useEffect(() => {
+    if (profile && calendarRef.current) {
+      const calendarApi = calendarRef.current.getApi();
+      const start = calendarApi.view.activeStart;
+      const end = calendarApi.view.activeEnd;
+      fetchLessons(start, end);
+    }
+  }, [internalRefreshTrigger, profile]);
+
+  const handleDatesSet = (arg: { start: Date; end: Date; }) => {
+    if (!profile) return;
+    const range = computeRange({ start: arg.start, end: arg.end });
+    fetchLessons(range.start, range.end);
+  };
+
+  // Normalize events: ensure start/end are local ISO strings and allDay is false
+  const eventsForCalendar = events.map(ev => {
+    let start: Date;
+    let end: Date;
+    if (typeof ev.start === 'string' || typeof ev.start === 'number') {
+      start = new Date(ev.start);
+    } else if (ev.start instanceof Date) {
+      start = ev.start;
+    } else {
+      start = new Date();
+    }
+    if (typeof ev.end === 'string' || typeof ev.end === 'number') {
+      end = new Date(ev.end);
+    } else if (ev.end instanceof Date) {
+      end = ev.end;
+    } else {
+      end = new Date(start.getTime() + 60 * 60 * 1000); // default 1h duration if missing
+    }
+    return {
+      ...ev,
+      start: toLocalISOString(start),
+      end: toLocalISOString(end),
+      allDay: false
+    };
+  });
+
+  // Debug: log the events passed to FullCalendar
+  if (typeof window !== 'undefined') {
+    console.log('Events for FullCalendar:', eventsForCalendar);
+  }
+
   const handleDateSelect = (selectInfo: DateSelectArg) => {
+    console.log("Date selected"); // Debug log
+    setIsEditing(false);
     resetModalFields();
 
     const startDate = selectInfo.start ? new Date(selectInfo.start) : new Date();
     const endDate = selectInfo.end ? new Date(selectInfo.end) : startDate;
 
-    setEventStartDate(formatDateForLocalInput(startDate));
-    setEventEndDate(formatDateForLocalInput(endDate));
+    setEventStartDate(toLocalISOString(startDate));
+    setEventEndDate(toLocalISOString(endDate));
 
-    openModal();
+    handleModalOpen();
   };
 
-  const handleEventClick = (clickInfo: EventClickArg) => {
-    const event = clickInfo.event;
-    const extended = event.extendedProps;
+  const handleAddOrUpdateEvent = async () => {
+    if (!profile) return;
 
-    setSelectedEvent(event as unknown as CalendarEvent);
-    setEventTitle(event.title);
-
-    const startDate = event.start ? new Date(event.start) : new Date();
-    const endDate = event.end ? new Date(event.end) : startDate;
-
-    setEventStartDate(formatDateForLocalInput(startDate));
-    setEventEndDate(formatDateForLocalInput(endDate));
-    setEventLevel(extended.calendar);
-    setLessonType(extended.type || "single");
-
-    if (extended.type === "group") {
-      setSelectedProfilesGroup(extended.profiles || []);
-    } else {
-      setSelectedProfile(extended.profiles?.[0] || null);
-    }
-
-    openModal();
-  };
-
-  const handleAddOrUpdateEvent = () => {
     const selectedProfiles =
-      lessonType === "single" ? (selectedProfile ? [selectedProfile] : []) : selectedProfilesGroup;
+      lessonType === "individual" ? (selectedProfile ? [selectedProfile] : []) : selectedProfilesGroup;
 
     const newEvent: CalendarEvent = {
       id: selectedEvent ? selectedEvent.id : Date.now().toString(),
-      title: eventTitle,
+      title: eventTitle || (lessonType === "individual" ? 
+        `Individual Lesson with ${selectedProfile?.name}` :
+        `Group Lesson: ${selectedProfilesGroup[0]?.name}`),
       start: eventStartDate,
       end: eventEndDate,
-      allDay: true,
+      allDay: false,
       extendedProps: {
-        calendar: eventLevel,
         type: lessonType,
-        profiles: selectedProfiles,
+        coach: `${profile.firstName} ${profile.lastName}`,
+        participants: selectedProfiles
       },
     };
 
-    if (selectedEvent) {
-      setEvents((prevEvents) =>
-        prevEvents.map((event) => (event.id === selectedEvent.id ? newEvent : event))
-      );
-    } else {
-      setEvents((prevEvents) => [...prevEvents, newEvent]);
-    }
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        setError('No user available');
+        return;
+      }
 
-    closeModal();
-    resetModalFields();
+      const calendarApi = calendarRef.current?.getApi();
+      const currentView = calendarApi?.view;
+      const start = currentView?.activeStart;
+      const end = currentView?.activeEnd;
+
+      if (!start || !end) {
+        setError('Could not determine current calendar range');
+        return;
+      }
+
+      const endpoint = isEditing 
+        ? `/api/profile/${user.id}/lessons/${selectedEvent?.id}?start=${encodeURIComponent(start.toISOString())}&end=${encodeURIComponent(end.toISOString())}`
+        : `/api/profile/${user.id}/lessons?start=${encodeURIComponent(start.toISOString())}&end=${encodeURIComponent(end.toISOString())}`;
+      
+      const method = isEditing ? 'PUT' : 'POST';
+
+      const response = await fetch(endpoint, {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user.id}`
+        },
+        body: JSON.stringify(newEvent)
+      });
+
+      if (!response.ok) {
+        setError('Failed to save lesson');
+        return;
+      }
+
+      const savedLesson = await response.json();
+
+      if (isEditing) {
+        setEvents((prevEvents) =>
+          prevEvents.map((event) => (event.id === selectedEvent?.id ? savedLesson : event))
+        );
+      } else {
+        setEvents((prevEvents) => [...prevEvents, savedLesson]);
+      }
+
+      // Call onLessonUpdate after successful update
+      if (onLessonUpdate) {
+        onLessonUpdate();
+      }
+
+      handleModalClose();
+      resetModalFields();
+    } catch (error) {
+      setError('Failed to save lesson. Please try again.');
+    }
   };
 
   const resetModalFields = () => {
     setEventTitle("");
-    setEventStartDate("");
-    setEventEndDate("");
+    setEventStartDate(toLocalISOString(new Date()));  // Set to current date/time
+    setEventEndDate(toLocalISOString(new Date(Date.now() + 60 * 60 * 1000)));  // Set to current date/time + 1 hour
     setSelectedEvent(null);
-    setLessonType("single");
+    setLessonType("individual");
     setSelectedProfile(null);
     setSelectedProfilesGroup([]);
+    setIsEditing(false);
+  };
+
+  const handleAddButtonClick = () => {
+    console.log("Add button clicked"); // Debug log
+    resetModalFields();
+    handleModalOpen();
   };
 
   const isCoach = role === "coach";
@@ -157,62 +358,156 @@ const Calendar: React.FC = () => {
   const customButtons = isCoach
     ? {
         addEventButton: {
-          text: "Add Event +",
-          click: openModal,
+          text: "Add Lesson +",
+          click: handleAddButtonClick
         },
       }
     : undefined;
   const headerLeft = `prev,next${isCoach ? " addEventButton" : ""}`;
 
+  const handleDeleteClick = async (event: CalendarEvent) => {
+    setLessonToDelete(event);
+    setShowModal(false);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!lessonToDelete || !profile) return;
+
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        setError('No user available');
+        return;
+      }
+
+      const response = await fetch(`/api/profile/${user.id}/lessons/${lessonToDelete.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${user.id}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete lesson');
+      }
+
+      // Remove the deleted lesson from the state
+      setEvents(prevEvents => prevEvents.filter(event => event.id !== lessonToDelete.id));
+      
+      // Trigger a refresh
+      setInternalRefreshTrigger(prev => prev + 1);
+      
+      // Call onLessonUpdate after successful deletion
+      if (onLessonUpdate) {
+        onLessonUpdate();
+      }
+
+      setLessonToDelete(null);
+    } catch (error) {
+      setError('Failed to delete lesson. Please try again.');
+    }
+  };
+
+  const renderEventContent = (eventInfo: EventContentArg) => {
+    const event = eventInfo.event;
+    const extendedProps = event.extendedProps as CalendarEvent["extendedProps"];
+    const startTime = event.start ? new Date(event.start).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '';
+    const endTime = event.end ? new Date(event.end).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '';
+    const isGroup = extendedProps.type === 'group';
+    const participantsDisplay = isGroup 
+      ? extendedProps.participants.map(p => p.name).join(", ")
+      : extendedProps.participants[0]?.name;
+
+    return (
+      <div className="relative group" style={{ fontSize: '12px', lineHeight: 1.2, whiteSpace: 'normal', overflow: 'hidden', maxWidth: '100%' }}>
+        <div style={{ fontWeight: 600, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{event.title}</div>
+        <div>{startTime} - {endTime}</div>
+        <div style={{ color: '#555', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{participantsDisplay}</div>
+        
+        {/* Delete button */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDeleteClick(event as unknown as CalendarEvent);
+          }}
+          className="absolute right-1 top-1 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded bg-white/80 dark:bg-black/80"
+        >
+          <svg className="w-3 h-3 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+        </button>
+      </div>
+    );
+  };
+
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-      <RoleBasedAccess allowedRoles={["coach"]}>
-        <div className="custom-calendar">
-          <FullCalendar
-            ref={calendarRef}
-            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-            initialView="dayGridMonth"
-            headerToolbar={{
-              left: headerLeft,
-              center: "title",
-              right: "dayGridMonth,timeGridWeek,timeGridDay",
-            }}
-            events={events}
-            selectable={true}
-            select={handleDateSelect}
-            eventClick={handleEventClick}
-            eventContent={renderEventContent}
-            customButtons={customButtons}
-          />
+    <div className="flex-1 rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+      {error && (
+        <div className="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-200 dark:text-red-800" role="alert">
+          {error}
         </div>
-        <LessonModal
-          isOpen={isOpen}
-          onClose={closeModal}
-          onSubmit={handleAddOrUpdateEvent}
-          selectedEvent={!!selectedEvent}
-          eventTitle={eventTitle}
-          setEventTitle={setEventTitle}
-          eventStartDate={eventStartDate}
-          setEventStartDate={setEventStartDate}
-          eventEndDate={eventEndDate}
-          setEventEndDate={setEventEndDate}
-        />
-      </RoleBasedAccess>
-    </div>
-  );
-};
-
-const renderEventContent = (eventInfo: EventContentArg) => {
-  const colorClass = `fc-bg-${eventInfo.event.extendedProps.calendar?.toLowerCase() || "default"}`;
-  const profiles = eventInfo.event.extendedProps.profiles;
-  const names = profiles?.map((p: any) => p.name).join(", ");
-
-  return (
-    <div className={`event-fc-color flex fc-event-main ${colorClass} p-1 rounded-sm`}>
-      <div className="fc-daygrid-event-dot"></div>
-      <div className="fc-event-time">{eventInfo.timeText}</div>
-      <div className="fc-event-title">{eventInfo.event.title}</div>
-      {names && <div className="text-xs text-gray-500 ml-1">{names}</div>}
+      )}
+      {!profile ? (
+        <div className="flex items-center justify-center p-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
+          <span className="ml-2">Loading...</span>
+        </div>
+      ) : (
+        <>
+          <div className="custom-calendar">
+            {isFetchingEvents && (
+              <div className="absolute top-4 right-4 flex items-center space-x-2 text-sm text-gray-500">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900 dark:border-white"></div>
+                <span>Updating...</span>
+              </div>
+            )}
+            <FullCalendar
+              ref={calendarRef}
+              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+              initialView="dayGridMonth"
+              headerToolbar={{
+                left: headerLeft,
+                center: "title",
+                right: "dayGridMonth,timeGridWeek,timeGridDay",
+              }}
+              events={events}
+              selectable={isCoach}
+              select={handleDateSelect}
+              eventClick={handleEventClick}
+              eventContent={renderEventContent}
+              customButtons={customButtons}
+              datesSet={handleDatesSet}
+            />
+          </div>
+          <RoleBasedAccess allowedRoles={["coach"]}>
+            <LessonModal
+              isOpen={showModal}
+              onClose={handleModalClose}
+              onSubmit={handleAddOrUpdateEvent}
+              selectedEvent={isEditing}
+              eventTitle={eventTitle}
+              setEventTitle={setEventTitle}
+              eventStartDate={eventStartDate}
+              setEventStartDate={setEventStartDate}
+              eventEndDate={eventEndDate}
+              setEventEndDate={setEventEndDate}
+              lessonType={lessonType === "individual" ? "single" : "group"}
+              setLessonType={(type: "single" | "group") => setLessonType(type === "single" ? "individual" : "group")}
+              selectedProfiles={selectedProfile ? [selectedProfile] : []}
+              setSelectedProfiles={profiles => setSelectedProfile(profiles[0] || null)}
+              selectedProfileGroup={selectedProfilesGroup}
+              setSelectedProfileGroup={setSelectedProfilesGroup}
+              onDelete={selectedEvent ? () => handleDeleteClick(selectedEvent) : undefined}
+            />
+          </RoleBasedAccess>
+          <DeleteConfirmationModal
+            isOpen={!!lessonToDelete}
+            onClose={() => setLessonToDelete(null)}
+            onConfirm={handleDeleteConfirm}
+            lessonTitle={lessonToDelete?.title || ''}
+          />
+        </>
+      )}
     </div>
   );
 };

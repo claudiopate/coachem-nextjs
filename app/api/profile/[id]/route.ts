@@ -1,57 +1,84 @@
 import { NextResponse } from 'next/server';
 import { prismaClient } from '@/utils/prisma/client';
+import { createServerClient } from '@/utils/supabase/server';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
-
-    try {
-        const param = await params
-        const profileId = param.id;
-
-        if (!profileId) {
-        return NextResponse.json(
-            { message: 'Profile Id is mandatory' },
-            { status: 400 }
-        );
-        }
-
-        const profile = await prismaClient.profile.findUnique({
-        where: { id: profileId },
-        });
-
-        if (!profile) {
-        return NextResponse.json({ message: 'Profile not found' }, { status: 404 });
-        }
-
-        return NextResponse.json(profile);
-    } catch (error) {
-        return NextResponse.json({ message: 'Server error' }, { status: 500 });
+  try {
+    const { id } = await Promise.resolve(context.params);
+    const supabase = await createServerClient();
+    
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // Fetch profile with roles
+    const profile = await prismaClient.profile.findUnique({
+      where: { id },
+      include: {
+        profileRole: {
+          include: {
+            role: true
+          }
+        }
+      }
+    });
+
+    if (!profile) {
+      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+    }
+
+    // Transform profile data
+    const transformedProfile = {
+      id: profile.id,
+      firstName: profile.firstName,
+      lastName: profile.lastName,
+      email: profile.email,
+      image: profile.image,
+      phone: profile.phone,
+      level: profile.level,
+      preferredSport: profile.preferredSport,
+      notes: profile.notes,
+      isChecked: profile.isChecked,
+      bestRanking: profile.bestRanking,
+      certifications: profile.certifications,
+      actualRanking: profile.actualRanking,
+      carrerNotes: profile.carrerNotes,
+      roles: profile.profileRole.map(pr => ({
+        id: pr.role.id,
+        name: pr.role.name,
+        description: pr.role.description
+      }))
+    };
+
+    return NextResponse.json(transformedProfile);
+  } catch (error) {
+    console.error('Error fetching profile:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }
 
-
 export async function createProfileRole(req: Request) {
-    debugger
-    
     const { profileId, role } = await req.json();
 
     const roleRecord = await prismaClient.role.findUnique({
-            where: { name: role },
+        where: { name: role },
     });
   
     if (!roleRecord) {
         throw new Error(`Role "${role}" not found`);
     }
 
-    // 3. Crea la relazione profile_role
     await prismaClient.profileRole.create({
         data: {
-        profileId: profileId,
-        roleId: roleRecord.id,
+            profileId: profileId,
+            roleId: roleRecord.id,
         },
     });
 
-  return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true });
 }

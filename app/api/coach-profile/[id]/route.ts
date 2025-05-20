@@ -19,7 +19,6 @@ export async function GET(
 
 
 export async function createProfileRole(req: Request) {
-    debugger
     
     const { profileId, role } = await req.json();
 

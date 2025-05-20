@@ -1,0 +1,24 @@
+/* FULLCALENDAR FIX: elimina scroll orizzontale e rende il calendario compatto */
+.fc .fc-daygrid-event {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 100% !important;
+}
+
+.fc .fc-daygrid-day-frame {
+  min-width: 0 !important;
+}
+
+.fc .fc-daygrid-day {
+  min-width: 0 !important;
+}
+
+.fc .fc-daygrid-day-events {
+  overflow-x: hidden !important;
+}
+
+.fc {
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+} 

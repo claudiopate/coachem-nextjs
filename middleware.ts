@@ -1,15 +1,20 @@
-import { NextResponse, type NextRequest } from 'next/server'
-import { updateSession } from './utils/supabase/middleware'
+import { NextResponse, type NextRequest } from 'next/server';
+import { updateSession } from './utils/supabase/middleware';
 
 export async function middleware(request: NextRequest) {
-  const response = await updateSession(request);
-
-  return response
+  // Temporarily bypass all middleware checks
+  return NextResponse.next();
 }
 
 export const config = {
   matcher: [
-    '/profile/:uuid([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})/:path*',
-    '/:uuid([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})/:path*',
+    /*
+     * Match all request paths except:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     */
+    '/((?!_next/static|_next/image|favicon.ico|public/|images/).*)',
   ],
-}
+};

@@ -17,6 +17,7 @@ import {
   LucidePlug,
   TableIcon,
   UserCircle,
+  Users,
 } from "lucide-react"
 import { useParams } from 'next/navigation';
 
@@ -25,6 +26,7 @@ type NavItem = {
   name: string;
   icon: React.ReactNode;
   path?: string;
+  roles?: string[];
   subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
 };
 
@@ -38,14 +40,21 @@ const navItems: NavItem[] = [
     icon: <Calendar />,
     name: "Calendar",
     path: "/calendar",
+  },
+  {
+    icon: <Users />,
+    name: "Students",
+    path: "/students",
+    roles: ["coach", "admin", "staff"]
   }
 ];
 
 type Props = {
   authProfileId: string;
+  userRole?: string;
 };
 
-const AppSidebar: React.FC<Props> = ({ authProfileId }) => {
+const AppSidebar: React.FC<Props> = ({ authProfileId, userRole }) => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const pathname = usePathname();
 
@@ -54,11 +63,13 @@ const AppSidebar: React.FC<Props> = ({ authProfileId }) => {
     menuType: "main" | "others"
   ) => (
     <ul className="flex flex-col gap-4">
-      {navItems.map((nav, index) => (
-        <li key={nav.name}>
-          { nav.path && (
+      {navItems
+        .filter(nav => !nav.roles || (userRole && nav.roles.includes(userRole)))
+        .map((nav, index) => (
+          <li key={nav.name}>
+            {nav.path && (
               <Link
-                href={`/profile/${authProfileId}/${nav.path}`} // Usa userId dinamico qui
+                href={`/profile/${authProfileId}/${nav.path}`}
                 className={`menu-item group ${pathname === `/profile/${authProfileId}/${nav.path}` ? "menu-item-active" : "menu-item-inactive"}`}
               >
                 <span
@@ -75,8 +86,8 @@ const AppSidebar: React.FC<Props> = ({ authProfileId }) => {
                 )}
               </Link>
             )}
-        </li>
-      ))}
+          </li>
+        ))}
     </ul>
   );
 

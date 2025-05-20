@@ -39,7 +39,7 @@ const HomeHeader: React.FC = () => {
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-white border-b border-gray-200 dark:border-gray-800 dark:bg-gray-900">
+    <header className="sticky top-0 z-[999] w-full bg-white border-b border-gray-200 dark:border-gray-800 dark:bg-gray-900">
       <div className="mx-auto flex w-full max-w-screen-xl items-center justify-between px-4 py-4 lg:px-6">
         {/* Logo */}
         <Link href="/" className="shrink-0">

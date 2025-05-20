@@ -1,16 +1,26 @@
-import Calendar from "@/components/calendar/Calendar";
-import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import { Metadata } from "next";
-import React from "react";
+import CalendarPage from "./CalendarPage";
+import { createServerComponentSupabase } from "@/utils/supabase/server";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
-  title: "Lessons Calender"
+  title: "Lessons Calendar"
 };
-export default function page() {
-  return (
-    <div>
-      <PageBreadcrumb pageTitle="Lessons" />
-      <Calendar />
-    </div>
-  );
+
+interface PageProps {
+  params: {
+    profileId: string;
+  };
+}
+
+export default async function Page({ params }: PageProps) {
+  const supabase = await createServerComponentSupabase();
+  
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  
+  if (userError || !user) {
+    redirect("/auth/signin");
+  }
+
+  return <CalendarPage params={params} />;
 }

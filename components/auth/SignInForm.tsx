@@ -10,36 +10,80 @@ import {ChevronLeftIcon, EyeClosedIcon , EyeIcon} from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 
-
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
-  const [email, setEmail] = useState(""); // Stato per email
-  const [password, setPassword] = useState(""); // Stato per password
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const supabase = createClient();
-  const router = useRouter(); // Hook del router
+  const router = useRouter();
 
   const handleLogin = async (event: React.FormEvent) => {
-    event.preventDefault(); // Evita il comportamento di default del form
-    try {
-      // Effettua il login con email e password
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email,
-        password: password,
-      });
+    event.preventDefault();
+    setError(null);
+    setIsLoading(true);
 
-      if (error) {
-        console.error("Errore di login:", error.message);
+    try {
+      if (!email || !password) {
+        setError('Please enter both email and password');
+        setIsLoading(false);
         return;
       }
 
-      // Se il login è riuscito, redirigi alla pagina del dashboard dell'utente
-      if (data) {
-        router.push(`/profile/${data.user.id}/dashboard`);
+      console.log('Attempting login...');
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        console.error('Login error:', error);
+        if (error.message.includes('Invalid login credentials')) {
+          setError('Invalid email or password');
+        } else if (error.message.includes('Email not confirmed')) {
+          setError('Please verify your email address before signing in');
+        } else {
+          setError(error.message);
+        }
+        return;
+      }
+
+      if (data?.user) {
+        console.log('Login successful, user:', data.user);
+        const dashboardUrl = `/profile/${data.user.id}/dashboard`;
+        
+        // Ensure session is fully established
+        try {
+          // Wait a moment for session to be properly set
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Double check session is established
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+          console.log('Final session check:', session);
+          
+          if (session) {
+            const baseUrl = window.location.origin;
+            window.location.href = `${baseUrl}${dashboardUrl}`;
+          } else {
+            console.error('Session not established after login');
+            setError('Unable to establish session. Please try again.');
+          }
+        } catch (sessionError) {
+          console.error('Session establishment error:', sessionError);
+          setError('Error establishing session. Please try again.');
+        }
+      } else {
+        console.error('No user data received');
+        setError('No user data received after login');
       }
     } catch (error) {
-      console.error("Errore durante il login:", error);
+      console.error('Unexpected error:', error);
+      setError('An unexpected error occurred. Please try again later.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -117,13 +161,23 @@ export default function SignInForm() {
                 </span>
               </div>
             </div>
-            <form>
+            <form onSubmit={handleLogin}>
               <div className="space-y-6">
+                {error && (
+                  <div className="p-3 text-sm text-red-500 bg-red-100 rounded-lg dark:bg-red-900/30">
+                    {error}
+                  </div>
+                )}
                 <div>
                   <Label>
                     Email <span className="text-error-500">*</span>{" "}
                   </Label>
-                  <Input placeholder="info@gmail.com" type="email" onChange={(e) => setEmail(e.target.value)} />
+                  <Input 
+                    placeholder="info@gmail.com" 
+                    type="email" 
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={isLoading}
+                  />
                 </div>
                 <div>
                   <Label>
@@ -134,6 +188,7 @@ export default function SignInForm() {
                       type={showPassword ? "text" : "password"}
                       placeholder="Enter your password"
                       onChange={(e) => setPassword(e.target.value)}
+                      disabled={isLoading}
                     />
                     <span
                       onClick={() => setShowPassword(!showPassword)}
@@ -162,11 +217,15 @@ export default function SignInForm() {
                   </Link>
                 </div>
                 <div>
-                <div>
-                  <button onClick={handleLogin} className="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600">
-                    Sign In
+                  <button 
+                    type="submit"
+                    disabled={isLoading}
+                    className={`flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600 ${
+                      isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                  >
+                    {isLoading ? 'Signing in...' : 'Sign In'}
                   </button>
-                </div>
                 </div>
               </div>
             </form>
@@ -175,7 +234,7 @@ export default function SignInForm() {
               <p className="text-sm font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start">
                 Don&apos;t have an account? {""}
                 <Link
-                  href="/signup"
+                  href="/auth/signup"
                   className="text-brand-500 hover:text-brand-600 dark:text-brand-400"
                 >
                   Sign Up

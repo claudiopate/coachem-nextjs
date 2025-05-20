@@ -1,11 +1,14 @@
-export default function RootLayout({
+import HomeHeader from "@/components/header/HomeHeader";
+
+export default function HomeLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <div>
+    <>
+      <HomeHeader />
       {children}
-    </div>
+    </>
   );
 }

@@ -109,6 +109,31 @@ export default function UserDropdown() {
             <DropdownItem
               onItemClick={closeDropdown}
               tag="a"
+              href={profile ? `/profile/${profile.id}/dashboard` : '#'}
+              className="flex items-center gap-3 px-3 py-2 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
+            >
+              <svg
+                className="fill-gray-500 group-hover:fill-gray-700 dark:fill-gray-400 dark:group-hover:fill-gray-300"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                  d="M3 4.5C3 3.67157 3.67157 3 4.5 3H9.5C10.3284 3 11 3.67157 11 4.5V9.5C11 10.3284 10.3284 11 9.5 11H4.5C3.67157 11 3 10.3284 3 9.5V4.5ZM4.5 4.5H9.5V9.5H4.5V4.5ZM13 4.5C13 3.67157 13.6716 3 14.5 3H19.5C20.3284 3 21 3.67157 21 4.5V9.5C21 10.3284 20.3284 11 19.5 11H14.5C13.6716 11 13 10.3284 13 9.5V4.5ZM14.5 4.5H19.5V9.5H14.5V4.5ZM3 14.5C3 13.6716 3.67157 13 4.5 13H9.5C10.3284 13 11 13.6716 11 14.5V19.5C11 20.3284 10.3284 21 9.5 21H4.5C3.67157 21 3 20.3284 3 19.5V14.5ZM4.5 14.5H9.5V19.5H4.5V14.5ZM13 14.5C13 13.6716 13.6716 13 14.5 13H19.5C20.3284 13 21 13.6716 21 14.5V19.5C21 20.3284 20.3284 21 19.5 21H14.5C13.6716 21 13 20.3284 13 19.5V14.5ZM14.5 14.5H19.5V19.5H14.5V14.5Z"
+                  fill=""
+                />
+              </svg>
+              Go to Dashboard
+            </DropdownItem>
+          </li>
+          <li>
+            <DropdownItem
+              onItemClick={closeDropdown}
+              tag="a"
               href="/profile"
               className="flex items-center gap-3 px-3 py-2 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
             >

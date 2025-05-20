@@ -1,53 +1,19 @@
-// /context/AuthRoleContext.tsx
+"use client";
+
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
-import { jwtDecode } from 'jwt-decode';
 import { createClient } from "@/utils/supabase/client";
-import { Role } from '@/types/auth/Role';
-import { AuthRoleContextType } from '@/types/auth/AuthRoleContext';
-import { SupabaseJWTClaims } from '@/types/auth/SupabaseJWTClaims';
 
+interface AuthRoleContextType {
+  role: string | null;
+  loading: boolean;
+  error: Error | null;
+}
 
-const AuthRoleContext = createContext<AuthRoleContextType | undefined>(undefined);
-
-export const AuthRoleProvider = ({ children }: { children: React.ReactNode }) => {
-  
-  const supabase = createClient();
-  
-  const [role, setRole] = useState<Role>();
-
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        if (session?.access_token) {
-          const jwt = jwtDecode<SupabaseJWTClaims>(session.access_token);
-          const profileRole = jwt.profile_role;
-
-          if (!profileRole) {
-            throw new Error("Missing 'profile_role' claim in JWT");
-          }
-
-          // Cast esplicito (solo se sei sicuro che sarà sempre uno di questi valori)
-          setRole(profileRole as Role);
-        }
-      }
-    );
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  if (!role) {
-    // puoi mostrare un loading spinner o lanciare un errore globale
-    return <div>Loading role...</div>;
-  }
-
-  return (
-    <AuthRoleContext.Provider value={{ role }}>
-      {children}
-    </AuthRoleContext.Provider>
-  );
-};
+const AuthRoleContext = createContext<AuthRoleContextType>({
+  role: null,
+  loading: true,
+  error: null
+});
 
 export const useAuthRole = () => {
   const context = useContext(AuthRoleContext);
@@ -55,4 +21,65 @@ export const useAuthRole = () => {
     throw new Error('useAuthRole must be used within an AuthRoleProvider');
   }
   return context;
+};
+
+interface AuthRoleProviderProps {
+  children: ReactNode;
+}
+
+export const AuthRoleProvider: React.FC<AuthRoleProviderProps> = ({ children }) => {
+  const [role, setRole] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const supabase = createClient();
+
+  useEffect(() => {
+    const fetchRole = async () => {
+      try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        
+        if (userError) {
+          throw userError;
+        }
+
+        if (!user) {
+          setRole(null);
+          return;
+        }
+
+        const response = await fetch(`/api/profile/${user.id}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch profile');
+        }
+
+        const profile = await response.json();
+        const userRole = profile.roles?.[0]?.name || null;
+        setRole(userRole);
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('Failed to fetch role'));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRole();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        fetchRole();
+      } else if (event === 'SIGNED_OUT') {
+        setRole(null);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  return (
+    <AuthRoleContext.Provider value={{ role, loading, error }}>
+      {children}
+    </AuthRoleContext.Provider>
+  );
 };

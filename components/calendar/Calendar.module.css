@@ -1,0 +1,15 @@
+/* Elimina scroll orizzontale e rende il calendario compatto */
+.fc .fc-daygrid-event {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.fc .fc-daygrid-day-frame {
+  min-width: 0 !important;
+}
+
+.fc .fc-daygrid-day {
+  min-width: 0 !important;
+} 

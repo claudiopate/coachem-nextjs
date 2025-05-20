@@ -49,28 +49,11 @@ export default function SignUpForm() {
       },
     });
 
-  
     if (error) {
       console.error("Signup error:", error.message);
       alert("Signup failed: " + error.message);
     } else {
-
-      debugger
-      const profileId = data.user?.id;
-      if (!profileId) {
-        console.error("Profile ID is null");
-        alert("Signup failed: Unable to retrieve profile ID.");
-        return;
-      }
-
-      // 2. Chiama la route API per creare ProfileRole
-      await fetch(`/api/profile_role/${profileId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role: role }),
-      });
-      
-      console.log("Redirecting...")
+      console.log("Signup successful, redirecting...");
       router.push("/auth/signin");
     }
   };

@@ -31,6 +31,27 @@ const menuData: Menu[] = [
     newTab: false,
     path: "/support",
   },
+  {
+    id: 4,
+    title: "Calendar",
+    path: "/calendar",
+    newTab: false,
+    roles: ["coach", "admin", "staff", "student"],
+  },
+  {
+    id: 5,
+    title: "Students",
+    path: "/students",
+    newTab: false,
+    roles: ["coach", "admin", "staff"],
+  },
+  {
+    id: 6,
+    title: "Dashboard",
+    path: "/dashboard",
+    newTab: false,
+    roles: ["coach", "admin", "staff", "student"],
+  },
 ];
 
 export default menuData;
