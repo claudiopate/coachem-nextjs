@@ -6,7 +6,8 @@ export async function GET(
   request: Request,
   context: { params: { id: string } }
 ) {
-  const id = context.params.id;
+  try {
+    const id = context.params.id;
 
     const supabase = await createServerClient();
     const { data: { user }, error: userError } = await supabase.auth.getUser();
