@@ -2,17 +2,12 @@ import { NextResponse } from 'next/server';
 import { prismaClient } from '@/utils/prisma/client';
 import { createServerClient } from '@/utils/supabase/server';
 
-type Params = {
-  id: string;
-};
-
 export async function GET(
-  request: Request,
-  { params }: { params: Params }
+  req: Request, context: { params: { id: string } }
 ) {
   try {
-    const { id } = params;
-    
+    const { id } = context.params;
+
     const supabase = await createServerClient();
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
