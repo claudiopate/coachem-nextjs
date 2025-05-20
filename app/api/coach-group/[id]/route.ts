@@ -1,16 +1,21 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { prismaClient } from '@/utils/prisma/client';
 import { createServerClient } from '@/utils/supabase/server';
 
-export async function GET(
-  request: Request,
-  context: { params: { id: string } }
-) {
+export async function GET(request: NextRequest) {
   try {
-    const id = context.params.id;
+    const url = new URL(request.url);
+    const id = url.pathname.split('/').pop(); // estrae l'id da /api/coach-group/[id]
+
+    if (!id) {
+      return NextResponse.json({ message: 'Missing ID' }, { status: 400 });
+    }
 
     const supabase = await createServerClient();
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
     if (userError || !user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
@@ -27,12 +32,12 @@ export async function GET(
             profile: {
               coach_profile_coach_profile_profile_idToprofile: {
                 some: {
-                  coachId: id
-                }
-              }
-            }
-          }
-        }
+                  coachId: id,
+                },
+              },
+            },
+          },
+        },
       },
       select: {
         id: true,
@@ -43,21 +48,21 @@ export async function GET(
               select: {
                 id: true,
                 firstName: true,
-                lastName: true
-              }
-            }
-          }
-        }
-      }
+                lastName: true,
+              },
+            },
+          },
+        },
+      },
     });
 
-    const transformedGroups = groups.map(group => ({
+    const transformedGroups = groups.map((group) => ({
       id: group.id,
       name: group.name,
-      participants: group.groupProfile.map(gp => ({
+      participants: group.groupProfile.map((gp) => ({
         id: gp.profile.id,
-        name: `${gp.profile.firstName} ${gp.profile.lastName}`
-      }))
+        name: `${gp.profile.firstName} ${gp.profile.lastName}`,
+      })),
     }));
 
     return NextResponse.json(transformedGroups);
