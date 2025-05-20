@@ -2,11 +2,14 @@ import { redirect } from "next/navigation";
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import ClientLayout from './ClientLayout';
+import { prismaClient } from '@/utils/prisma/client';
 
 interface RoleResponse {
-  role: {
+  roles: {
+    id: string;
     name: string;
-  };
+    description: string | null;
+  }[];
 }
 
 export default async function ProfileLayout({
@@ -30,35 +33,37 @@ export default async function ProfileLayout({
 
     console.log('User found:', user.id); // Debug log
 
-    // Fetch user role with more detailed error handling
+    // Fetch user role using Prisma
     let userRole: string | undefined = undefined;
     const authProfileId = user.id;
 
     try {
-      const { data: profileRole, error: roleError } = await supabase
-        .from('profile_role')
-        .select(`
-          role:role (
-            name
-          )
-        `)
-        .eq('profile_id', user.id)
-        .single<RoleResponse>();
+      const profile = await prismaClient.profile.findUnique({
+        where: { id: user.id },
+        include: {
+          profileRole: {
+            include: {
+              role: true
+            }
+          }
+        }
+      });
 
-      if (roleError) {
-        console.error('Role fetch error details:', {
-          error: roleError,
-          userId: user.id,
-          query: 'profile_role with role.name',
-        });
-      } else if (!profileRole) {
-        console.error('No role found for user:', user.id);
+      if (!profile) {
+        console.error('No profile found for user:', user.id);
       } else {
-        userRole = profileRole.role?.name;
-        console.log('Role found:', userRole); // Debug log
+        const allRoles = profile.profileRole.map(pr => pr.role.name);
+        console.log('All available roles:', allRoles);
+        
+        // Check if user has any of the required roles for Students menu
+        const allowedRoles = ['coach', 'admin', 'staff'];
+        const matchingRole = allRoles.find(role => allowedRoles.includes(role));
+        
+        userRole = matchingRole || profile.profileRole[0]?.role.name;
+        console.log('Assigned role:', userRole);
       }
     } catch (roleError) {
-      console.error('Role fetch exception:', roleError);
+      console.error('Role fetch error:', roleError);
     }
 
     // Continue even if role fetch fails

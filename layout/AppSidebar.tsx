@@ -34,17 +34,17 @@ const navItems: NavItem[] = [
   {
     icon: <GridIcon />,
     name: "Dashboard",
-    path: "/dashboard",
+    path: "dashboard",
   },
   {
     icon: <Calendar />,
     name: "Calendar",
-    path: "/calendar",
+    path: "calendar",
   },
   {
     icon: <Users />,
     name: "Students",
-    path: "/students",
+    path: "students",
     roles: ["coach", "admin", "staff"]
   }
 ];
@@ -58,38 +58,55 @@ const AppSidebar: React.FC<Props> = ({ authProfileId, userRole }) => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const pathname = usePathname();
 
+  console.log('AppSidebar - Current userRole:', userRole);
+
   const renderMenuItems = (
     navItems: NavItem[],
     menuType: "main" | "others"
-  ) => (
-    <ul className="flex flex-col gap-4">
-      {navItems
-        .filter(nav => !nav.roles || (userRole && nav.roles.includes(userRole)))
-        .map((nav, index) => (
-          <li key={nav.name}>
-            {nav.path && (
-              <Link
-                href={`/profile/${authProfileId}/${nav.path}`}
-                className={`menu-item group ${pathname === `/profile/${authProfileId}/${nav.path}` ? "menu-item-active" : "menu-item-inactive"}`}
-              >
-                <span
-                  className={`${
-                    pathname === `/profile/${authProfileId}/${nav.path}`
-                      ? "menu-item-icon-active"
-                      : "menu-item-icon-inactive"
-                  }`}
+  ) => {
+    return (
+      <ul className="flex flex-col gap-4">
+        {navItems.map((nav, index) => {
+          // Check if the menu item should be shown based on roles
+          const hasRequiredRole = !nav.roles || (userRole && nav.roles.includes(userRole));
+          console.log(`Menu item ${nav.name}:`, {
+            hasRoles: !!nav.roles,
+            requiredRoles: nav.roles,
+            userRole,
+            hasRequiredRole
+          });
+
+          if (!hasRequiredRole) {
+            return null;
+          }
+
+          return (
+            <li key={nav.name}>
+              {nav.path && (
+                <Link
+                  href={`/profile/${authProfileId}/${nav.path}`}
+                  className={`menu-item group ${pathname === `/profile/${authProfileId}/${nav.path}` ? "menu-item-active" : "menu-item-inactive"}`}
                 >
-                  {nav.icon}
-                </span>
-                {(isExpanded || isHovered || isMobileOpen) && (
-                  <span className={`menu-item-text`}>{nav.name}</span>
-                )}
-              </Link>
-            )}
-          </li>
-        ))}
-    </ul>
-  );
+                  <span
+                    className={`${
+                      pathname === `/profile/${authProfileId}/${nav.path}`
+                        ? "menu-item-icon-active"
+                        : "menu-item-icon-inactive"
+                    }`}
+                  >
+                    {nav.icon}
+                  </span>
+                  {(isExpanded || isHovered || isMobileOpen) && (
+                    <span className={`menu-item-text`}>{nav.name}</span>
+                  )}
+                </Link>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    );
+  };
 
   return (
     <aside

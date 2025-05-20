@@ -409,17 +409,16 @@ model GroupProfile {
 model Lesson {
   id                                 String       @id(map: "bookings_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   status                             String       @default("pending")
-  groupId                            String?      @map("group_id") @db.Uuid
-  coachId                            String       @map("coach_id") @db.Uuid
+  groupId                            String?      @default(dbgenerated("gen_random_uuid()")) @map("group_id") @db.Uuid
+  coachId                            String       @default(dbgenerated("gen_random_uuid()")) @map("coach_id") @db.Uuid
   createdAt                          DateTime     @default(now()) @map("created_at")
   updatedAt                          DateTime?    @default(now()) @map("updated_at")
-  courtId                            String?      @map("court_id") @db.Uuid
-  profileId                          String?      @map("profile_id") @db.Uuid
+  courtId                            String?      @default(dbgenerated("gen_random_uuid()")) @map("court_id") @db.Uuid
+  profileId                          String?      @default(dbgenerated("gen_random_uuid()")) @map("profile_id") @db.Uuid
   startTime                          DateTime     @map("start_time") @db.Timestamptz(6)
   endTime                            DateTime     @map("end_time") @db.Timestamptz(6)
   attendance                         Attendance[]
   profile                            Profile      @relation(fields: [coachId], references: [id], onDelete: SetNull)
-  court                              Court?       @relation(fields: [courtId], references: [id], onDelete: Restrict)
   group                              Group?       @relation(fields: [groupId], references: [id], onDelete: Restrict)
   profile_lesson_profile_idToprofile Profile?     @relation("lesson_profile_idToprofile", fields: [profileId], references: [id])
 
@@ -529,6 +528,28 @@ model CoachProfile {
   @@index([coachId], map: "idx_coach_id")
   @@index([profileId], map: "idx_student_id")
   @@map("coach_profile")
+  @@schema("public")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model profile_temp {
+  id              String   @id @db.Uuid
+  first_name      String
+  last_name       String
+  email           String   @unique
+  image           String?
+  phone           String?
+  level           String?
+  preferred_sport String?
+  notes           String?
+  created_at      DateTime @default(now()) @db.Timestamp(6)
+  updated_at      DateTime @default(now()) @db.Timestamp(6)
+  is_checked      Boolean? @default(false)
+  best_ranking    String?
+  certifications  String[]
+  actual_ranking  String?
+  carrer_notes    String?
+
   @@schema("public")
 }
 

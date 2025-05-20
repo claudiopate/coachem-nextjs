@@ -12,6 +12,16 @@ interface Profile {
   level: string | null;
   preferredSport: string | null;
   notes: string | null;
+  isChecked: boolean;
+  bestRanking: string | null;
+  certifications: string[];
+  actualRanking: string | null;
+  carrerNotes: string | null;
+  roles: {
+    id: string;
+    name: string;
+    description: string | null;
+  }[];
 }
 
 interface ProfileContextType {
@@ -63,17 +73,7 @@ export const ProfileProvider: React.FC<ProfileProviderProps> = ({ children, prof
         throw new Error('Profile not found');
       }
 
-      return {
-        id: profileData.id,
-        firstName: profileData.firstName,
-        lastName: profileData.lastName,
-        email: profileData.email,
-        image: profileData.image,
-        phone: profileData.phone,
-        level: profileData.level,
-        preferredSport: profileData.preferredSport,
-        notes: profileData.notes
-      };
+      return profileData;
     } catch (err) {
       console.error('Error in fetchProfile:', err);
       throw err;

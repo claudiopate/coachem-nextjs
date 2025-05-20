@@ -35,26 +35,34 @@ export default function SignUpForm() {
       return;
     }
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          first_name: firstName,
-          last_name: lastName,
-          email: email,
-          is_checked: isChecked,
-          role: role
+    try {
+      // Call our API endpoint instead of Supabase directly
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      },
-    });
+        body: JSON.stringify({
+          email,
+          password,
+          firstName,
+          lastName,
+          role,
+          isChecked
+        }),
+      });
 
-    if (error) {
-      console.error("Signup error:", error.message);
-      alert("Signup failed: " + error.message);
-    } else {
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Signup failed");
+      }
+
+      const data = await response.json();
       console.log("Signup successful, redirecting...");
       router.push("/auth/signin");
+    } catch (error) {
+      console.error("Signup process error:", error);
+      alert("Signup failed: " + (error instanceof Error ? error.message : "Unknown error"));
     }
   };
 
