@@ -2,16 +2,13 @@ import { NextResponse } from 'next/server';
 import { prismaClient } from '@/utils/prisma/client';
 import { createServerClient } from '@/utils/supabase/server';
 
-interface RouteContext {
-  params: {
-    id: string;
-  };
-  searchParams: { [key: string]: string | string[] | undefined };
-}
+type Params = {
+  id: string;
+};
 
 export async function GET(
-  _request: Request,
-  { params }: RouteContext
+  request: Request,
+  { params }: { params: Params }
 ) {
   try {
     const { id } = params;
