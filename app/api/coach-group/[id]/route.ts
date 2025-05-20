@@ -4,10 +4,10 @@ import { createServerClient } from '@/utils/supabase/server';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
-    const { id } = await Promise.resolve(params);
+    const { id } = context.params;
     
     const supabase = await createServerClient();
     const { data: { user }, error: userError } = await supabase.auth.getUser();
