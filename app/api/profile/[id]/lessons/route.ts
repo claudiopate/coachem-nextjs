@@ -1,13 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prismaClient } from '@/utils/prisma/client';
 import { createServerClient } from '@/utils/supabase/server';
+import { match } from 'path-to-regexp';
 
 interface LessonParticipant {
-  profileId: string;
-  profile: {
-    id: string;
-    name: string;
-  };
+  id: string;
+  name: string;
 }
 
 interface Lesson {
@@ -24,18 +22,23 @@ interface Lesson {
   participants: LessonParticipant[];
 }
 
-export async function GET(
-  request: Request,
-  context: { params: { id: string } }
-) {
+export async function GET(request: NextRequest) {
   try {
-    const { id } = await Promise.resolve(context.params);
+    const pathname = new URL(request.url).pathname;
+    const matcher = match('/api/profile/:id/lessons');
+    const matched = matcher(pathname);
+
+    if (!matched || !matched.params?.id) {
+      return NextResponse.json({ message: 'Missing or invalid ID' }, { status: 400 });
+    }
+
+    const id = matched.params.id.toString();
     const supabase = await createServerClient();
     
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     
     if (userError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
     // Get URL parameters
@@ -44,7 +47,7 @@ export async function GET(
     const end = url.searchParams.get('end');
 
     if (!start || !end) {
-      return NextResponse.json({ error: 'Missing start or end date' }, { status: 400 });
+      return NextResponse.json({ message: 'Missing start or end date' }, { status: 400 });
     }
 
     // Fetch lessons from the database
@@ -129,16 +132,21 @@ export async function GET(
     return NextResponse.json(events);
   } catch (error) {
     console.error('Error fetching lessons:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ message: 'Error fetching lessons' }, { status: 500 });
   }
 }
 
-export async function POST(
-  request: Request,
-  context: { params: { id: string } }
-) {
+export async function POST(request: NextRequest) {
   try {
-    const { id } = await Promise.resolve(context.params);
+    const pathname = new URL(request.url).pathname;
+    const matcher = match('/api/profile/:id/lessons');
+    const matched = matcher(pathname);
+
+    if (!matched || !matched.params?.id) {
+      return NextResponse.json({ message: 'Missing or invalid ID' }, { status: 400 });
+    }
+
+    const id = matched.params.id.toString();
     const supabase = await createServerClient();
     
     const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -321,21 +329,23 @@ export async function POST(
     };
 
     return NextResponse.json(transformedLesson);
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error creating lesson:', error);
-    return NextResponse.json(
-      { message: 'Error creating lesson', details: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: 'Error creating lesson' }, { status: 500 });
   }
 }
 
-export async function PUT(
-  request: Request,
-  context: { params: { id: string } }
-) {
+export async function PUT(request: NextRequest) {
   try {
-    const { id } = await Promise.resolve(context.params);
+    const pathname = new URL(request.url).pathname;
+    const matcher = match('/api/profile/:id/lessons');
+    const matched = matcher(pathname);
+
+    if (!matched || !matched.params?.id) {
+      return NextResponse.json({ message: 'Missing or invalid ID' }, { status: 400 });
+    }
+
+    const id = matched.params.id.toString();
     const supabase = await createServerClient();
     
     const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -343,7 +353,6 @@ export async function PUT(
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    // Verify that the requested profile ID matches the authenticated user's ID
     if (user.id !== id) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
@@ -367,72 +376,20 @@ export async function PUT(
 
     const lessonData = await request.json();
 
-    // Update the lesson
-    const lesson = await prismaClient.lesson.update({
-      where: {
-        id: lessonData.id
-      },
-      data: {
-        startTime: new Date(lessonData.start),
-        endTime: new Date(lessonData.end),
-        status: lessonData.status || 'pending',
-        // If it's a group lesson
-        ...(lessonData.extendedProps.type === 'group' && {
-          groupId: lessonData.extendedProps.participants[0]?.id,
-          profileId: null, // Clear individual student if switching to group
-        }),
-        // If it's an individual lesson
-        ...(lessonData.extendedProps.type === 'individual' && {
-          profileId: lessonData.extendedProps.participants[0]?.id,
-          groupId: null, // Clear group if switching to individual
-        }),
-      },
-      include: {
-        profile: true,
-        group: {
-          include: {
-            groupProfile: {
-              include: {
-                profile: true
-              }
-            }
-          }
-        },
-        profile_lesson_profile_idToprofile: true
-      }
-    });
-
     // Transform the lesson to match the expected format
     const transformedLesson = {
-      id: lesson.id,
-      title: lesson.profile_lesson_profile_idToprofile ? 
-        `Individual Lesson with ${lesson.profile_lesson_profile_idToprofile.firstName} ${lesson.profile_lesson_profile_idToprofile.lastName}` :
-        `Group Lesson: ${lesson.group?.name || 'Unnamed Group'}`,
-      start: lesson.startTime,
-      end: lesson.endTime,
-      status: lesson.status,
-      location: 'No location',
-      extendedProps: {
-        type: lesson.group ? 'group' : 'individual',
-        coach: `${lesson.profile.firstName} ${lesson.profile.lastName}`,
-        participants: lesson.group ? 
-          lesson.group.groupProfile.map(gp => ({
-            id: gp.profile.id,
-            name: `${gp.profile.firstName} ${gp.profile.lastName}`
-          })) :
-          lesson.profile_lesson_profile_idToprofile ? [{
-            id: lesson.profile_lesson_profile_idToprofile.id,
-            name: `${lesson.profile_lesson_profile_idToprofile.firstName} ${lesson.profile_lesson_profile_idToprofile.lastName}`
-          }] : []
-      }
+      id: lessonData.id,
+      title: lessonData.title,
+      start: lessonData.start,
+      end: lessonData.end,
+      status: lessonData.status,
+      location: lessonData.location || 'No location',
+      extendedProps: lessonData.extendedProps
     };
 
     return NextResponse.json(transformedLesson);
   } catch (error) {
     console.error('Error updating lesson:', error);
-    return NextResponse.json(
-      { message: 'Error updating lesson' },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: 'Error updating lesson' }, { status: 500 });
   }
 } 

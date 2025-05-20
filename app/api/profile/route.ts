@@ -1,12 +1,18 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prismaClient } from '@/utils/prisma/client';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
     const { id, firstName, lastName, email, role } = data;
 
-    console.log('Creating profile with data:', { id, firstName, lastName, email, role });
+    // Validate required fields
+    if (!id || !firstName || !lastName || !email || !role) {
+      return NextResponse.json(
+        { message: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
 
     // Create the profile
     const profile = await prismaClient.profile.create({
@@ -19,17 +25,14 @@ export async function POST(request: Request) {
       }
     });
 
-    console.log('Profile created:', profile);
-
     // Find the role record
     const roleRecord = await prismaClient.role.findUnique({
       where: { name: role }
     });
 
     if (!roleRecord) {
-      console.error('Role not found:', role);
       return NextResponse.json(
-        { error: `Role "${role}" not found` },
+        { message: `Role "${role}" not found` },
         { status: 400 }
       );
     }
@@ -42,13 +45,11 @@ export async function POST(request: Request) {
       }
     });
 
-    console.log('ProfileRole created:', profileRole);
-
     return NextResponse.json({ profile, profileRole });
   } catch (error) {
     console.error('Error creating profile:', error);
     return NextResponse.json(
-      { error: 'Failed to create profile', details: error instanceof Error ? error.message : 'Unknown error' },
+      { message: 'Failed to create profile' },
       { status: 500 }
     );
   }

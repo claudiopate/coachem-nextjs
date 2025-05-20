@@ -2,7 +2,7 @@ import { createServerClient as createClient, type CookieOptions } from '@supabas
 import { cookies } from 'next/headers'
 
 export const createServerClient = async () => {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();  // <-- Aggiungi await
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -22,12 +22,12 @@ export const createServerClient = async () => {
   )
 }
 
-export const createAdminClient = () => {
+export const createAdminClient = async () => {  // anche qui diventa async
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     throw new Error('SUPABASE_SERVICE_ROLE_KEY is not defined')
   }
   
-  const cookieStore = cookies();
+  const cookieStore = await cookies();  // <-- await anche qui
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY,
@@ -49,4 +49,4 @@ export const createAdminClient = () => {
       }
     }
   )
-} 
+}

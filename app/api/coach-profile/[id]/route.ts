@@ -2,28 +2,37 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prismaClient } from '@/utils/prisma/client';
 import { getProfilesByCoach } from '@/repository/profile';
 import { createServerClient } from '@/utils/supabase/server';
+import { match } from 'path-to-regexp';
 
-interface Context {
-  params: {
-    id: string;
-  };
-}
-
-// GET handler
-export async function GET(_req: NextRequest, context: Context) {
+export async function GET(request: NextRequest) {
   try {
-    const profileId = context.params.id;
+    const pathname = new URL(request.url).pathname;
+    const matcher = match('/api/coach-profile/:id');
+    const matched = matcher(pathname);
+
+    if (!matched || !matched.params?.id) {
+      return NextResponse.json({ message: 'Missing or invalid ID' }, { status: 400 });
+    }
+
+    const profileId = matched.params.id.toString();
     const data = await getProfilesByCoach({ params: { id: profileId } });
     return NextResponse.json({ data });
   } catch (err) {
-    console.error('Errore nel recupero dei profili:', err);
-    return NextResponse.json({ error: 'Errore lato server' }, { status: 500 });
+    console.error('Error fetching profiles:', err);
+    return NextResponse.json({ message: 'Error fetching profiles' }, { status: 500 });
   }
 }
 
-// DELETE handler
-export async function DELETE(request: NextRequest, context: Context) {
+export async function DELETE(request: NextRequest) {
   try {
+    const pathname = new URL(request.url).pathname;
+    const matcher = match('/api/coach-profile/:id');
+    const matched = matcher(pathname);
+
+    if (!matched || !matched.params?.id) {
+      return NextResponse.json({ message: 'Missing or invalid ID' }, { status: 400 });
+    }
+
     const supabase = await createServerClient();
     const {
       data: { user },
@@ -31,7 +40,7 @@ export async function DELETE(request: NextRequest, context: Context) {
     } = await supabase.auth.getUser();
 
     if (userError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
     const { id: coachProfileId } = await request.json();
@@ -45,16 +54,20 @@ export async function DELETE(request: NextRequest, context: Context) {
     return NextResponse.json({ message: 'Student successfully disconnected' });
   } catch (error) {
     console.error('Error disconnecting student:', error);
-    return NextResponse.json(
-      { error: 'Failed to disconnect student' },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: 'Error disconnecting student' }, { status: 500 });
   }
 }
 
-// POST handler
 export async function POST(request: NextRequest) {
   try {
+    const pathname = new URL(request.url).pathname;
+    const matcher = match('/api/coach-profile/:id');
+    const matched = matcher(pathname);
+
+    if (!matched || !matched.params?.id) {
+      return NextResponse.json({ message: 'Missing or invalid ID' }, { status: 400 });
+    }
+
     const { profileId, role } = await request.json();
 
     const roleRecord = await prismaClient.role.findUnique({
@@ -62,10 +75,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!roleRecord) {
-      return NextResponse.json(
-        { error: `Role "${role}" not found` },
-        { status: 404 }
-      );
+      return NextResponse.json({ message: `Role "${role}" not found` }, { status: 404 });
     }
 
     const profileRole = await prismaClient.profileRole.create({
@@ -78,9 +88,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, data: profileRole });
   } catch (error) {
     console.error('Error creating profile role:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: 'Error creating profile role' }, { status: 500 });
   }
 }

@@ -1,14 +1,14 @@
-import { NextResponse } from 'next/server';
-import { prismaClient } from '@/utils/prisma/client';
+import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/utils/supabase/server';
+import { prismaClient } from '@/utils/prisma/client';
 import { ProfileAvailability } from '@prisma/client';
 
 interface AvailabilitySlot {
   dayOfWeek: number[];
   startTime: string;
   endTime: string;
-  startDate?: string | null;
-  endDate?: string | null;
+  startDate?: string;
+  endDate?: string;
 }
 
 const parseTimeString = (timeStr: string): Date => {
@@ -60,9 +60,8 @@ const transformBigIntToNumber = (obj: any): any => {
   return obj;
 };
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const supabase = createAdminClient();
     const body = await request.json();
     const { firstName, lastName, email, level, phone, coachId, availability } = body as {
       firstName: string;
@@ -80,32 +79,28 @@ export async function POST(request: Request) {
     });
 
     if (existingProfile) {
-      return NextResponse.json(
-        { error: 'A user with this email already exists' },
-        { status: 400 }
-      );
+      return NextResponse.json({ message: 'A user with this email already exists' }, { status: 400 });
     }
 
-    // Create new user in Supabase Auth using admin client
-    const { data, error } = await supabase.auth.admin.createUser({
+    // Create new user in Supabase Auth
+    const supabase = await createServerClient();
+    const { data, error } = await supabase.auth.signUp({
       email,
       password: 'Coachem2024!',
-      email_confirm: true,
-      user_metadata: {
-        first_name: firstName,
-        last_name: lastName,
-        email: email,
-        is_checked: true,
-        role: 'student'
-      },
+      options: {
+        data: {
+          first_name: firstName,
+          last_name: lastName,
+          email: email,
+          is_checked: true,
+          role: 'student'
+        },
+      }
     });
 
     if (error) {
       console.error('Auth Error:', error);
-      return NextResponse.json(
-        { error: error.message },
-        { status: 400 }
-      );
+      return NextResponse.json({ message: error.message }, { status: 400 });
     }
 
     if (!data.user?.id) {
@@ -123,50 +118,45 @@ export async function POST(request: Request) {
     });
 
     // Create availability records if provided
-    let availabilityRecords: ProfileAvailability[] = [];
+    const availabilityRecords: ProfileAvailability[] = [];
     if (availability && availability.length > 0) {
-      availabilityRecords = await Promise.all(
-        availability.map(slot => 
-          prismaClient.profileAvailability.create({
-            data: {
-              profileId: userId,
-              dayOfWeek: slot.dayOfWeek.map(day => BigInt(day)),
-              startTime: parseTimeString(slot.startTime),
-              endTime: parseTimeString(slot.endTime),
-              startDate: slot.startDate ? new Date(slot.startDate) : null,
-              endDate: slot.endDate ? new Date(slot.endDate) : null,
-              updatedAt: new Date()
-            }
-          })
-        )
-      );
+      for (const slot of availability) {
+        const record = await prismaClient.profileAvailability.create({
+          data: {
+            profileId: userId,
+            dayOfWeek: slot.dayOfWeek.map(day => BigInt(day)),
+            startTime: new Date(`1970-01-01T${slot.startTime}Z`),
+            endTime: new Date(`1970-01-01T${slot.endTime}Z`),
+            startDate: slot.startDate ? new Date(slot.startDate) : null,
+            endDate: slot.endDate ? new Date(slot.endDate) : null,
+            updatedAt: new Date()
+          }
+        });
+        availabilityRecords.push(record);
+      }
     }
 
     // Transform the availability records for the response
     const transformedAvailability = availabilityRecords.map(record => ({
-      ...record,
+      id: record.id,
       dayOfWeek: record.dayOfWeek.map(Number),
       startTime: record.startTime.toTimeString().split(' ')[0],
       endTime: record.endTime.toTimeString().split(' ')[0],
+      startDate: record.startDate?.toISOString().split('T')[0] || null,
+      endDate: record.endDate?.toISOString().split('T')[0] || null,
       createdAt: record.createdAt.toISOString(),
       updatedAt: record.updatedAt.toISOString()
     }));
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       message: 'Student created successfully',
-      data: {
-        user: data.user,
-        coachProfile,
-        availability: transformedAvailability
-      }
+      user: data.user,
+      coachProfile,
+      availability: transformedAvailability
     });
-
   } catch (error) {
     console.error('Error creating student:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to create student' },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: 'Error creating student' }, { status: 500 });
   }
 }
 

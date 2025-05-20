@@ -1,8 +1,8 @@
+import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/utils/supabase/server';
-import { NextResponse } from 'next/server';
 import { prismaClient } from '@/utils/prisma/client';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const supabase = await createServerClient();
     const body = await request.json();
@@ -24,17 +24,11 @@ export async function POST(request: Request) {
     });
 
     if (error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 400 }
-      );
+      return NextResponse.json({ message: error.message }, { status: 400 });
     }
 
     if (!data.user) {
-      return NextResponse.json(
-        { error: "No user data returned" },
-        { status: 400 }
-      );
+      return NextResponse.json({ message: "No user data returned" }, { status: 400 });
     }
 
     // Create profile and assign role
@@ -68,16 +62,10 @@ export async function POST(request: Request) {
       });
     } catch (profileError) {
       console.error("Error creating profile:", profileError);
-      return NextResponse.json(
-        { error: "Account created but profile setup failed" },
-        { status: 500 }
-      );
+      return NextResponse.json({ message: "Account created but profile setup failed" }, { status: 500 });
     }
   } catch (error) {
     console.error("Signup process error:", error);
-    return NextResponse.json(
-      { error: "Signup failed" },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: "Signup failed" }, { status: 500 });
   }
 } 

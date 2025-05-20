@@ -1,19 +1,25 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prismaClient } from '@/utils/prisma/client';
 import { createServerClient } from '@/utils/supabase/server';
+import { match } from 'path-to-regexp';
 
-export async function GET(
-  request: Request,
-  context: { params: { id: string } }
-) {
+export async function GET(request: NextRequest) {
   try {
-    const { id } = await Promise.resolve(context.params);
+    const pathname = new URL(request.url).pathname;
+    const matcher = match('/api/profile/:id');
+    const matched = matcher(pathname);
+
+    if (!matched || !matched.params?.id) {
+      return NextResponse.json({ message: 'Missing or invalid ID' }, { status: 400 });
+    }
+
+    const id = matched.params.id.toString();
     const supabase = await createServerClient();
     
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     
     if (userError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
     // Fetch profile with roles
@@ -29,7 +35,7 @@ export async function GET(
     });
 
     if (!profile) {
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+      return NextResponse.json({ message: 'Profile not found' }, { status: 404 });
     }
 
     // Transform profile data
@@ -58,32 +64,40 @@ export async function GET(
     return NextResponse.json(transformedProfile);
   } catch (error) {
     console.error('Error fetching profile:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ message: 'Error fetching profile' }, { status: 500 });
   }
 }
 
-export async function POST(req: Request) {
-    try {
-        const { profileId, role } = await req.json();
+export async function POST(request: NextRequest) {
+  try {
+    const pathname = new URL(request.url).pathname;
+    const matcher = match('/api/profile/:id');
+    const matched = matcher(pathname);
 
-        const roleRecord = await prismaClient.role.findUnique({
-            where: { name: role },
-        });
-      
-        if (!roleRecord) {
-            return NextResponse.json({ error: `Role "${role}" not found` }, { status: 404 });
-        }
-
-        const profileRole = await prismaClient.profileRole.create({
-            data: {
-                profileId: profileId,
-                roleId: roleRecord.id,
-            },
-        });
-
-        return NextResponse.json({ success: true, data: profileRole });
-    } catch (error) {
-        console.error('Error creating profile role:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    if (!matched || !matched.params?.id) {
+      return NextResponse.json({ message: 'Missing or invalid ID' }, { status: 400 });
     }
+
+    const { profileId, role } = await request.json();
+
+    const roleRecord = await prismaClient.role.findUnique({
+      where: { name: role },
+    });
+
+    if (!roleRecord) {
+      return NextResponse.json({ message: `Role "${role}" not found` }, { status: 404 });
+    }
+
+    const profileRole = await prismaClient.profileRole.create({
+      data: {
+        profileId: profileId,
+        roleId: roleRecord.id,
+      },
+    });
+
+    return NextResponse.json({ success: true, data: profileRole });
+  } catch (error) {
+    console.error('Error creating profile role:', error);
+    return NextResponse.json({ message: 'Error creating profile role' }, { status: 500 });
+  }
 }

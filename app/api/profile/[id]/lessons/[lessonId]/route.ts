@@ -1,22 +1,31 @@
-import { createServerClient } from "@/utils/supabase/server";
-import { NextRequest, NextResponse } from "next/server";
-import { prismaClient } from "@/utils/prisma/client";
+import { NextRequest, NextResponse } from 'next/server';
+import { createServerClient } from '@/utils/supabase/server';
+import { prismaClient } from '@/utils/prisma/client';
+import { match } from 'path-to-regexp';
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string; lessonId: string } }
-) {
+export async function PUT(request: NextRequest) {
   try {
+    const pathname = new URL(request.url).pathname;
+    const matcher = match('/api/profile/:id/lessons/:lessonId');
+    const matched = matcher(pathname);
+
+    if (!matched || !matched.params?.id || !matched.params?.lessonId) {
+      return NextResponse.json({ message: 'Missing or invalid ID' }, { status: 400 });
+    }
+
+    const id = matched.params.id.toString();
+    const lessonId = matched.params.lessonId.toString();
+
     const supabase = await createServerClient();
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
     // Verify that the user has permission to update this lesson
-    if (user.id !== params.id) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (user.id !== id) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
     const lessonData = await request.json();
@@ -25,7 +34,7 @@ export async function PUT(
     // Update the lesson
     const lesson = await prismaClient.lesson.update({
       where: {
-        id: params.lessonId,
+        id: lessonId,
       },
       data: {
         startTime: new Date(lessonData.start),
@@ -88,35 +97,40 @@ export async function PUT(
 
     return NextResponse.json(transformedLesson);
   } catch (error) {
-    console.error("Error in PUT /api/profile/[id]/lessons/[lessonId]:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    console.error('Error in PUT /api/profile/[id]/lessons/[lessonId]:', error);
+    return NextResponse.json({ message: 'Error updating lesson' }, { status: 500 });
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string; lessonId: string } }
-) {
+export async function DELETE(request: NextRequest) {
   try {
+    const pathname = new URL(request.url).pathname;
+    const matcher = match('/api/profile/:id/lessons/:lessonId');
+    const matched = matcher(pathname);
+
+    if (!matched || !matched.params?.id || !matched.params?.lessonId) {
+      return NextResponse.json({ message: 'Missing or invalid ID' }, { status: 400 });
+    }
+
+    const id = matched.params.id.toString();
+    const lessonId = matched.params.lessonId.toString();
+
     const supabase = await createServerClient();
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     // Verify that the user has permission to delete this lesson
-    if (user.id !== params.id) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (user.id !== id) {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 
     // Delete the lesson
     await prismaClient.lesson.delete({
       where: {
-        id: params.lessonId
+        id: lessonId
       }
     });
 
@@ -124,7 +138,7 @@ export async function DELETE(
   } catch (error) {
     console.error('Error deleting lesson:', error);
     return NextResponse.json(
-      { error: "Failed to delete lesson" },
+      { message: "Failed to delete lesson" },
       { status: 500 }
     );
   }
