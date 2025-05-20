@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prismaClient } from '@/utils/prisma/client';
-import { createAdminClient } from '@/utils/supabase/server';
+import { createServerClient } from '@/utils/supabase/server';
 import { ProfileAvailability } from '@prisma/client';
 
 interface AvailabilitySlot {

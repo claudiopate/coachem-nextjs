@@ -1,14 +1,13 @@
-import { createClient } from "@/utils/supabase/server";
+import { createServerClient } from "@/utils/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { prismaClient } from "@/utils/prisma/client";
-import { Prisma } from "@prisma/client";
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string; lessonId: string } }
 ) {
   try {
-    const supabase = await createClient();
+    const supabase = await createServerClient();
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user) {
@@ -102,7 +101,7 @@ export async function DELETE(
   { params }: { params: { id: string; lessonId: string } }
 ) {
   try {
-    const supabase = await createClient();
+    const supabase = await createServerClient();
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user) {

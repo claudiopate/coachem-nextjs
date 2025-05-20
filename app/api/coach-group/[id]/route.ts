@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prismaClient } from '@/utils/prisma/client';
-import { createClient } from '@/utils/supabase/server';
+import { createServerClient } from '@/utils/supabase/server';
 
 export async function GET(
   request: Request,
@@ -9,7 +9,7 @@ export async function GET(
   try {
     const { id } = await Promise.resolve(params);
     
-    const supabase = await createClient();
+    const supabase = await createServerClient();
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user) {
