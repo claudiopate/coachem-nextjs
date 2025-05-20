@@ -62,23 +62,28 @@ export async function GET(
   }
 }
 
-export async function createProfileRole(req: Request) {
-    const { profileId, role } = await req.json();
+export async function POST(req: Request) {
+    try {
+        const { profileId, role } = await req.json();
 
-    const roleRecord = await prismaClient.role.findUnique({
-        where: { name: role },
-    });
-  
-    if (!roleRecord) {
-        throw new Error(`Role "${role}" not found`);
+        const roleRecord = await prismaClient.role.findUnique({
+            where: { name: role },
+        });
+      
+        if (!roleRecord) {
+            return NextResponse.json({ error: `Role "${role}" not found` }, { status: 404 });
+        }
+
+        const profileRole = await prismaClient.profileRole.create({
+            data: {
+                profileId: profileId,
+                roleId: roleRecord.id,
+            },
+        });
+
+        return NextResponse.json({ success: true, data: profileRole });
+    } catch (error) {
+        console.error('Error creating profile role:', error);
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
-
-    await prismaClient.profileRole.create({
-        data: {
-            profileId: profileId,
-            roleId: roleRecord.id,
-        },
-    });
-
-    return NextResponse.json({ success: true });
 }

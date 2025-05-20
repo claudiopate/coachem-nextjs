@@ -1,15 +1,21 @@
-import { NextResponse, NextRequest } from 'next/server';
-import { prismaClient } from '@/utils/prisma/client';
+// app/api/coach-group/[id]/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { match } from 'path-to-regexp';
 import { createServerClient } from '@/utils/supabase/server';
+import { prismaClient } from '@/utils/prisma/client';
 
 export async function GET(request: NextRequest) {
   try {
-    const url = new URL(request.url);
-    const id = url.pathname.split('/').pop(); // estrae l'id da /api/coach-group/[id]
+    const pathname = new URL(request.url).pathname;
 
-    if (!id) {
-      return NextResponse.json({ message: 'Missing ID' }, { status: 400 });
+    const matcher = match('/api/coach-group/:id');
+    const matched = matcher(pathname);
+
+    if (!matched || !matched.params?.id) {
+      return NextResponse.json({ message: 'Missing or invalid ID' }, { status: 400 });
     }
+
+    const id = matched.params.id;
 
     const supabase = await createServerClient();
     const {
@@ -68,9 +74,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(transformedGroups);
   } catch (error) {
     console.error('Error fetching coach groups:', error);
-    return NextResponse.json(
-      { message: 'Error fetching groups' },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: 'Error fetching groups' }, { status: 500 });
   }
 }
