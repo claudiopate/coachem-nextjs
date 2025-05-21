@@ -63,8 +63,15 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(transformedProfile);
   } catch (error) {
-    console.error('Error fetching profile:', error);
-    return NextResponse.json({ message: 'Error fetching profile' }, { status: 500 });
+    // Enhanced error logging
+    console.error('Error fetching profile - Full error:', {
+      error,
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    return NextResponse.json({ 
+      message: error instanceof Error ? error.message : 'Error fetching profile'
+    }, { status: 500 });
   }
 }
 
