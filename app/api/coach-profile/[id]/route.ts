@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prismaClient } from '@/utils/prisma/client';
 import { getProfilesByCoach } from '@/repository/profile';
-import { createServerClient } from '@/utils/supabase/server';
+import { createClient } from '@/utils/supabase/server';
 import { match } from 'path-to-regexp';
 
 export async function GET(request: NextRequest) {
@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
     }
 
     const profileId = matched.params.id.toString();
+    const supabase = await createClient();
     const data = await getProfilesByCoach({ params: { id: profileId } });
     return NextResponse.json({ data });
   } catch (err) {
@@ -33,7 +34,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ message: 'Missing or invalid ID' }, { status: 400 });
     }
 
-    const supabase = await createServerClient();
+    const supabase = await createClient();
     const {
       data: { user },
       error: userError,

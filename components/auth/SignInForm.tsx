@@ -33,55 +33,60 @@ export default function SignInForm() {
         return;
       }
 
-      console.log('Attempting login...');
-      const { data, error } = await supabase.auth.signInWithPassword({
+      // Sign in with password
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) {
-        console.error('Login error:', error);
-        if (error.message.includes('Invalid login credentials')) {
+      if (signInError) {
+        console.error('Login error:', signInError);
+        if (signInError.message.includes('Invalid login credentials')) {
           setError('Invalid email or password');
-        } else if (error.message.includes('Email not confirmed')) {
+        } else if (signInError.message.includes('Email not confirmed')) {
           setError('Please verify your email address before signing in');
         } else {
-          setError(error.message);
+          setError(signInError.message);
         }
+        setIsLoading(false);
         return;
       }
 
-      if (data?.user) {
-        console.log('Login successful, user:', data.user);
-        const dashboardUrl = `/profile/${data.user.id}/dashboard`;
-        
-        // Ensure session is fully established
-        try {
-          // Wait a moment for session to be properly set
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          // Double check session is established
-          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-          console.log('Final session check:', session);
-          
-          if (session) {
-            const baseUrl = window.location.origin;
-            window.location.href = `${baseUrl}${dashboardUrl}`;
-          } else {
-            console.error('Session not established after login');
-            setError('Unable to establish session. Please try again.');
-          }
-        } catch (sessionError) {
-          console.error('Session establishment error:', sessionError);
-          setError('Error establishing session. Please try again.');
-        }
-      } else {
+      if (!signInData?.user) {
         console.error('No user data received');
         setError('No user data received after login');
+        setIsLoading(false);
+        return;
       }
+
+      // Get the session immediately after sign in
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        console.error('Session error:', sessionError);
+        setError('Failed to establish session. Please try again.');
+        setIsLoading(false);
+        return;
+      }
+
+      // Verify the session is valid
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        console.error('User verification error:', userError);
+        setError('Failed to verify user session. Please try again.');
+        setIsLoading(false);
+        return;
+      }
+
+      // All checks passed, redirect to dashboard
+      const dashboardUrl = `/profile/${user.id}/dashboard`;
+      router.push(dashboardUrl);
+      router.refresh();
+      
     } catch (error) {
-      console.error('Unexpected error:', error);
-      setError('An unexpected error occurred. Please try again later.');
+      console.error('Unexpected error during login:', error);
+      setError('An unexpected error occurred. Please try again.');
     } finally {
       setIsLoading(false);
     }

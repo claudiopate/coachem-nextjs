@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prismaClient } from '@/utils/prisma/client';
-import { createServerClient } from '@/utils/supabase/server';
+import { createClient } from '@/utils/supabase/server';
 import { match } from 'path-to-regexp';
 
 interface LessonParticipant {
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     }
 
     const id = matched.params.id.toString();
-    const supabase = await createServerClient();
+    const supabase = await createClient();
     
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     
@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
     }
 
     const id = matched.params.id.toString();
-    const supabase = await createServerClient();
+    const supabase = await createClient();
     
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     
@@ -346,7 +346,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const id = matched.params.id.toString();
-    const supabase = await createServerClient();
+    const supabase = await createClient();
     
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {

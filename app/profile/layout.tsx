@@ -1,8 +1,7 @@
 import { redirect } from "next/navigation";
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import ClientLayout from './ClientLayout';
+import { createClient } from '@/utils/supabase/server';
 import { prismaClient } from '@/utils/prisma/client';
+import ClientLayout from './ClientLayout';
 
 interface RoleResponse {
   roles: {
@@ -17,10 +16,9 @@ export default async function ProfileLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const cookieStore = cookies();
-  const supabase = createServerComponentClient({ cookies: () => cookieStore });
-
   try {
+    const supabase = await createClient();
+
     const {
       data: { user },
       error: userError

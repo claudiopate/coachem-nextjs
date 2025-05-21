@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/utils/supabase/server';
+import { createClient } from '@/utils/supabase/server';
 import { prismaClient } from '@/utils/prisma/client';
 import { match } from 'path-to-regexp';
 
@@ -16,7 +16,7 @@ export async function PUT(request: NextRequest) {
     const id = matched.params.id.toString();
     const lessonId = matched.params.lessonId.toString();
 
-    const supabase = await createServerClient();
+    const supabase = await createClient();
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user) {
@@ -115,7 +115,7 @@ export async function DELETE(request: NextRequest) {
     const id = matched.params.id.toString();
     const lessonId = matched.params.lessonId.toString();
 
-    const supabase = await createServerClient();
+    const supabase = await createClient();
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user) {

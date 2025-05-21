@@ -1,7 +1,7 @@
 // app/api/coach-group/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { match } from 'path-to-regexp';
-import { createServerClient } from '@/utils/supabase/server';
+import { createClient } from '@/utils/supabase/server';
 import { prismaClient } from '@/utils/prisma/client';
 
 export async function GET(request: NextRequest) {
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
 
     const id = matched.params.id;
 
-    const supabase = await createServerClient();
+    const supabase = await createClient();
     const {
       data: { user },
       error: userError,

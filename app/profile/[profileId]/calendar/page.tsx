@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import CalendarPage from "./CalendarPage";
-import { createServerClient } from "@/utils/supabase/server";
+import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 const Page = async (props: any) => {
   const { params } = props;
 
-  const supabase = await createServerClient();
+  const supabase = await createClient();
   const {
     data: { user },
     error: userError,

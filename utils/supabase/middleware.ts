@@ -33,24 +33,8 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  const { data: { session }, error } = await supabase.auth.getSession()
-
-  if (!session && !request.nextUrl.pathname.startsWith('/auth')) {
-    return NextResponse.redirect(new URL('/auth/signin', request.url))
-  }
-
-  if (session && request.nextUrl.pathname.startsWith('/auth')) {
-    return NextResponse.redirect(new URL(`/profile/${session.user.id}/dashboard`, request.url))
-  }
-
-  if (session && request.nextUrl.pathname.startsWith('/profile/')) {
-    const segments = request.nextUrl.pathname.split('/')
-    const profileId = segments[2] // /profile/[profileId]/...
-    
-    if (profileId !== session.user.id) {
-      return NextResponse.redirect(new URL(`/profile/${session.user.id}/dashboard`, request.url))
-    }
-  }
+  // Refresh session if expired - this will update the session cookie if needed
+  await supabase.auth.getUser()
 
   return response
-}
+} 
