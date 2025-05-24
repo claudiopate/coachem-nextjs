@@ -16,9 +16,9 @@ export async function GET(request: NextRequest) {
     const id = matched.params.id.toString();
     const supabase = await createClient();
     
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
     
-    if (sessionError || !session) {
+    if (userError || !user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
