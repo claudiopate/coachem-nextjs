@@ -1,0 +1,273 @@
+/* Add these styles at the beginning of the file */
+.event-content {
+  @apply relative flex flex-col text-white;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.event-title {
+  @apply font-semibold truncate;
+}
+
+.event-time {
+  @apply text-xs;
+}
+
+.event-participants {
+  @apply text-xs truncate opacity-90;
+}
+
+.event-delete {
+  @apply absolute right-1 top-1 opacity-0 transition-opacity p-1 rounded;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.fc-event:hover .event-delete {
+  @apply opacity-100;
+}
+
+.day-cell-content {
+  @apply flex items-center justify-center w-6 h-6 rounded-full;
+}
+
+.fc-day-today .day-cell-content {
+  @apply bg-primary-100 dark:bg-primary-900/50;
+}
+
+/* Calendar Mobile Styles */
+.fc-mobile-view {
+  --fc-page-bg-color: theme('colors.white');
+  --fc-border-color: theme('colors.gray.200');
+  --fc-today-bg-color: theme('colors.primary.50');
+  --fc-event-bg-color: theme('colors.primary.500');
+  --fc-event-border-color: theme('colors.primary.600');
+  --fc-event-text-color: theme('colors.white');
+  --header-height: 3.5rem;
+  
+  .fc {
+    height: 100% !important;
+    background: var(--fc-page-bg-color);
+  }
+
+  @media (max-width: 768px) {
+    .fc {
+      display: flex;
+      flex-direction: column;
+      height: 100vh !important;
+      max-height: calc(100vh - var(--header-height));
+    }
+
+    /* Header Styling */
+    .fc-header-toolbar {
+      height: var(--header-height);
+      padding: 0.5rem;
+      background: var(--fc-page-bg-color);
+      border-bottom: 1px solid var(--fc-border-color);
+      display: flex !important;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      flex-shrink: 0;
+    }
+
+    .fc-toolbar-chunk {
+      @apply flex items-center gap-1;
+    }
+
+    .fc-toolbar-title {
+      @apply text-base font-semibold;
+    }
+
+    .fc-button {
+      @apply text-xs py-1.5 px-2.5 shadow-sm;
+      min-height: 2rem;
+    }
+
+    /* Month View */
+    .fc-dayGridMonth-view {
+      .fc-scrollgrid {
+        border: none !important;
+      }
+
+      .fc-scrollgrid-section > td {
+        border: none !important;
+      }
+
+      .fc-daygrid-day {
+        @apply border-gray-100 dark:border-gray-800;
+      }
+
+      .fc-daygrid-day-frame {
+        min-height: 5rem;
+      }
+
+      .fc-daygrid-day-events {
+        padding: 0.125rem;
+        margin: 0;
+      }
+
+      .fc-daygrid-event-harness {
+        margin: 1px 0;
+      }
+
+      .fc-daygrid-event {
+        @apply bg-primary-500 text-white dark:bg-primary-600 dark:text-white shadow-sm rounded;
+        margin: 1px 2px;
+        border: none;
+        min-height: 1.5rem;
+        padding: 2px 4px;
+
+        .fc-event-main {
+          padding: 0;
+        }
+
+        .fc-event-time {
+          @apply text-xs font-medium text-white;
+        }
+
+        .fc-event-title {
+          @apply text-xs font-medium text-white;
+        }
+      }
+
+      .fc-daygrid-more-link {
+        @apply text-xs font-medium text-primary-600 dark:text-primary-400;
+        background: transparent;
+        padding: 2px 4px;
+      }
+    }
+
+    /* Week/Day View */
+    .fc-timegrid-view {
+      height: 100%;
+      
+      .fc-timegrid-body {
+        overflow-x: hidden;
+      }
+
+      .fc-timegrid-slot {
+        height: 3rem !important;
+      }
+
+      .fc-timegrid-slot-label {
+        @apply text-xs text-gray-500 dark:text-gray-400;
+        vertical-align: middle;
+      }
+
+      .fc-timegrid-axis {
+        @apply border-gray-100 dark:border-gray-800;
+      }
+
+      .fc-timegrid-event {
+        @apply bg-primary-500 text-white dark:bg-primary-600 dark:text-white shadow-sm rounded;
+        margin: 0 1px;
+        border: none;
+        min-height: 1.5rem;
+
+        .fc-event-main {
+          padding: 2px 4px;
+        }
+
+        .fc-event-time {
+          @apply text-xs font-medium text-white;
+        }
+
+        .fc-event-title {
+          @apply text-xs font-medium text-white;
+        }
+      }
+    }
+
+    /* Column Headers */
+    .fc-col-header {
+      background: var(--fc-page-bg-color);
+      position: sticky;
+      top: var(--header-height);
+      z-index: 30;
+      border-bottom: 1px solid var(--fc-border-color);
+    }
+
+    .fc-col-header-cell {
+      @apply border-gray-100 dark:border-gray-800;
+      padding: 0.5rem;
+    }
+
+    .fc-col-header-cell-cushion {
+      @apply text-sm font-medium text-gray-900 dark:text-gray-100;
+      padding: 0;
+    }
+
+    /* Event Content */
+    .event-content {
+      @apply relative flex flex-col;
+      font-size: 12px;
+      line-height: 1.2;
+    }
+
+    .event-title {
+      @apply font-semibold truncate;
+    }
+
+    .event-time {
+      @apply text-xs;
+    }
+
+    .event-participants {
+      @apply text-xs truncate opacity-90;
+    }
+
+    .event-delete {
+      @apply absolute right-1 top-1 opacity-0 transition-opacity p-1 rounded hover:bg-black/20;
+    }
+
+    .fc-event:hover .event-delete {
+      @apply opacity-100;
+    }
+
+    /* Fix scrolling */
+    .fc-view-harness {
+      height: calc(100vh - var(--header-height) - 3rem) !important;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .fc-scroller {
+      height: auto !important;
+      overflow: visible !important;
+    }
+
+    .fc-scroller-liquid-absolute {
+      position: static !important;
+    }
+  }
+}
+
+/* Dark mode support */
+.dark .fc-mobile-view {
+  --fc-page-bg-color: theme('colors.gray.900');
+  --fc-border-color: theme('colors.gray.800');
+  --fc-today-bg-color: theme('colors.primary.900/30');
+
+  .fc-day-today {
+    background: var(--fc-today-bg-color) !important;
+  }
+
+  .fc-button {
+    @apply bg-gray-800 text-gray-200 border-gray-700;
+    
+    &:hover {
+      @apply bg-gray-700;
+    }
+  }
+
+  .fc-button-active {
+    @apply bg-primary-900 text-primary-100;
+    
+    &:hover {
+      @apply bg-primary-800;
+    }
+  }
+} 

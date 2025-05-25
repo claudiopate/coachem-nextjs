@@ -119,7 +119,7 @@ export function StudentsList() {
   return (
     <div className="w-full space-y-6">
       {/* Search Input */}
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-md mx-auto">
         <Input
           type="text"
           placeholder="Search students..."
@@ -130,14 +130,14 @@ export function StudentsList() {
       </div>
 
       {/* Students Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {isLoading ? (
           // Loading skeletons
           [...Array(6)].map((_, i) => (
-            <Card key={i} className="p-6 animate-pulse">
+            <Card key={i} className="p-4 sm:p-6 animate-pulse">
               <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700" />
-                <div className="flex-1 space-y-2">
+                <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 flex-shrink-0" />
+                <div className="flex-1 space-y-2 min-w-0">
                   <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
                   <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
                 </div>
@@ -147,9 +147,9 @@ export function StudentsList() {
         ) : (
           // Actual student cards
           filteredStudents.map((student) => (
-            <Card key={student.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+            <Card key={student.id} className="p-4 sm:p-6 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
               <div className="flex items-start space-x-4">
-                <Avatar className="h-12 w-12 bg-blue-100">
+                <Avatar className="h-12 w-12 bg-blue-100 flex-shrink-0">
                   <AvatarImage src={student.image} />
                   <AvatarFallback className="text-blue-600 font-medium">
                     {student.firstName[0]}{student.lastName[0]}
@@ -157,8 +157,8 @@ export function StudentsList() {
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate">
                         {student.firstName} {student.lastName}
                       </h3>
                       <AlertDialog>

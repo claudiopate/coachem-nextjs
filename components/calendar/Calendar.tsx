@@ -10,13 +10,14 @@ import {
   EventClickArg,
   EventContentArg,
 } from "@fullcalendar/core";
-import RoleBasedAccess from "../auth/RoleBasedAccess";
+import { RoleBasedAccess } from "../auth/RoleBasedAccess";
 import { useAuthRole } from "@/context/auth/AuthRoleProvider";
 import LessonModal from "./LessonModal";
 import { useProfile } from "@/context/profile/ProfileProvider";
 import { createClient } from "@/utils/supabase/client";
 import "./Calendar.module.css";
 import DeleteConfirmationModal from './DeleteConfirmationModal';
+import '@/styles/calendar.css';
 
 interface CalendarEvent extends EventInput {
   extendedProps: {
@@ -74,6 +75,95 @@ const Calendar: React.FC<CalendarProps> = ({
   const [lessonToDelete, setLessonToDelete] = useState<CalendarEvent | null>(null);
   const [internalRefreshTrigger, setInternalRefreshTrigger] = useState(0);
   const [showModal, setShowModal] = useState(false);
+
+  // Define headerLeft before using it
+  const headerLeft = role === "coach" ? "createEventButton,prev,next" : "prev,next";
+
+  // Add mobile view state
+  const [isMobileView, setIsMobileView] = useState(false);
+
+  // Add effect to handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobileView(window.innerWidth < 768);
+    };
+    
+    handleResize(); // Initial check
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  // Customize mobile view settings
+  const mobileSettings = {
+    headerToolbar: {
+      left: 'prev,next',
+      center: 'title',
+      right: 'dayGridMonth,timeGridWeek,timeGridDay'
+    },
+    views: {
+      dayGridMonth: {
+        titleFormat: { year: 'numeric', month: 'long' },
+        dayHeaderFormat: { weekday: 'short' },
+        fixedWeekCount: false,
+        showNonCurrentDates: false
+      },
+      timeGridWeek: {
+        titleFormat: { year: 'numeric', month: 'long' },
+        dayHeaderFormat: { weekday: 'short', month: 'numeric', day: 'numeric' },
+        slotDuration: '00:30:00',
+        slotLabelInterval: '01:00'
+      },
+      timeGridDay: {
+        titleFormat: { year: 'numeric', month: 'long', day: 'numeric' },
+        dayHeaderFormat: { weekday: 'long', month: 'numeric', day: 'numeric' },
+        slotDuration: '00:30:00',
+        slotLabelInterval: '01:00'
+      }
+    },
+    buttonText: {
+      today: 'Oggi',
+      month: 'Mese',
+      week: 'Sett.',
+      day: 'Giorno'
+    }
+  };
+
+  // Customize desktop view settings
+  const desktopSettings = {
+    headerToolbar: {
+      left: 'prev,next today',
+      center: 'title',
+      right: 'dayGridMonth,timeGridWeek,timeGridDay'
+    },
+    views: {
+      dayGridMonth: {
+        titleFormat: { year: 'numeric', month: 'long' },
+        dayHeaderFormat: { weekday: 'short' },
+        fixedWeekCount: false
+      },
+      timeGridWeek: {
+        titleFormat: { year: 'numeric', month: 'long' },
+        dayHeaderFormat: { weekday: 'short', month: 'numeric', day: 'numeric' },
+        slotDuration: '00:30:00',
+        slotLabelInterval: '01:00'
+      },
+      timeGridDay: {
+        titleFormat: { year: 'numeric', month: 'long', day: 'numeric' },
+        dayHeaderFormat: { weekday: 'long', month: 'numeric', day: 'numeric' },
+        slotDuration: '00:30:00',
+        slotLabelInterval: '01:00'
+      }
+    },
+    buttonText: {
+      today: 'Oggi',
+      month: 'Mese',
+      week: 'Sett.',
+      day: 'Giorno'
+    }
+  };
 
   const handleModalClose = () => {
     setShowModal(false);
@@ -363,7 +453,6 @@ const Calendar: React.FC<CalendarProps> = ({
         },
       }
     : undefined;
-  const headerLeft = `prev,next${isCoach ? " addEventButton" : ""}`;
 
   const handleDeleteClick = async (event: CalendarEvent) => {
     setLessonToDelete(event);
@@ -418,32 +507,40 @@ const Calendar: React.FC<CalendarProps> = ({
       ? extendedProps.participants.map(p => p.name).join(", ")
       : extendedProps.participants[0]?.name;
 
+    if (eventInfo.view.type === 'dayGridMonth') {
+      return (
+        <div className="relative group p-1">
+          <div className="font-medium text-white truncate">{event.title}</div>
+        </div>
+      );
+    }
+
     return (
-      <div className="relative group" style={{ fontSize: '12px', lineHeight: 1.2, whiteSpace: 'normal', overflow: 'hidden', maxWidth: '100%' }}>
-        <div style={{ fontWeight: 600, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{event.title}</div>
-        <div>{startTime} - {endTime}</div>
-        <div style={{ color: '#555', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{participantsDisplay}</div>
-        
-        {/* Delete button */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            handleDeleteClick(event as unknown as CalendarEvent);
-          }}
-          className="absolute right-1 top-1 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded bg-white/80 dark:bg-black/80"
-        >
-          <svg className="w-3 h-3 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-          </svg>
-        </button>
+      <div className="relative group p-1">
+        <div className="font-medium text-white truncate">{event.title}</div>
+        <div className="text-white text-xs">{startTime} - {endTime}</div>
+        <div className="text-white text-xs truncate">{participantsDisplay}</div>
+        {isCoach && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDeleteClick(event as unknown as CalendarEvent);
+            }}
+            className="absolute right-1 top-1 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-black/20 rounded"
+          >
+            <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        )}
       </div>
     );
   };
 
   return (
-    <div className="flex-1 rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+    <div className="flex-1 rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] flex flex-col overflow-hidden">
       {error && (
-        <div className="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-200 dark:text-red-800" role="alert">
+        <div className="p-4 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-200 dark:text-red-800" role="alert">
           {error}
         </div>
       )}
@@ -454,9 +551,9 @@ const Calendar: React.FC<CalendarProps> = ({
         </div>
       ) : (
         <>
-          <div className="custom-calendar">
+          <div className={`custom-calendar flex-1 relative ${isMobileView ? 'fc-mobile-view' : ''}`}>
             {isFetchingEvents && (
-              <div className="absolute top-4 right-4 flex items-center space-x-2 text-sm text-gray-500">
+              <div className="absolute top-4 right-4 flex items-center space-x-2 text-sm text-gray-500 z-50">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900 dark:border-white"></div>
                 <span>Updating...</span>
               </div>
@@ -464,12 +561,8 @@ const Calendar: React.FC<CalendarProps> = ({
             <FullCalendar
               ref={calendarRef}
               plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-              initialView="dayGridMonth"
-              headerToolbar={{
-                left: headerLeft,
-                center: "title",
-                right: "dayGridMonth,timeGridWeek,timeGridDay",
-              }}
+              initialView={isMobileView ? "dayGridMonth" : "dayGridMonth"}
+              {...(isMobileView ? mobileSettings : desktopSettings)}
               events={events}
               selectable={isCoach}
               select={handleDateSelect}
@@ -477,6 +570,25 @@ const Calendar: React.FC<CalendarProps> = ({
               eventContent={renderEventContent}
               customButtons={customButtons}
               datesSet={handleDatesSet}
+              height="100%"
+              expandRows={true}
+              stickyHeaderDates={true}
+              handleWindowResize={true}
+              allDaySlot={false}
+              slotMinTime="06:00:00"
+              slotMaxTime="22:00:00"
+              nowIndicator={true}
+              scrollTime={new Date().getHours() + ":00:00"}
+              snapDuration="00:15:00"
+              dayMaxEventRows={isMobileView ? 4 : true}
+              moreLinkClick="day"
+              eventDisplay="block"
+              eventMinHeight={24}
+              displayEventTime={true}
+              displayEventEnd={true}
+              eventBackgroundColor="var(--fc-event-bg-color)"
+              eventBorderColor="var(--fc-event-border-color)"
+              eventTextColor="var(--fc-event-text-color)"
             />
           </div>
           <RoleBasedAccess allowedRoles={["coach"]}>
