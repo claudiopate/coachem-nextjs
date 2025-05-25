@@ -105,20 +105,20 @@ const Calendar: React.FC<CalendarProps> = ({
     },
     views: {
       dayGridMonth: {
-        titleFormat: { year: 'numeric', month: 'long' },
-        dayHeaderFormat: { weekday: 'short' },
+        titleFormat: { year: 'numeric' as const, month: 'long' as const },
+        dayHeaderFormat: { weekday: 'short' as const },
         fixedWeekCount: false,
         showNonCurrentDates: false
       },
       timeGridWeek: {
-        titleFormat: { year: 'numeric', month: 'long' },
-        dayHeaderFormat: { weekday: 'short', month: 'numeric', day: 'numeric' },
+        titleFormat: { year: 'numeric' as const, month: 'long' as const },
+        dayHeaderFormat: { weekday: 'short' as const, month: 'numeric' as const, day: 'numeric' as const },
         slotDuration: '00:30:00',
         slotLabelInterval: '01:00'
       },
       timeGridDay: {
-        titleFormat: { year: 'numeric', month: 'long', day: 'numeric' },
-        dayHeaderFormat: { weekday: 'long', month: 'numeric', day: 'numeric' },
+        titleFormat: { year: 'numeric' as const, month: 'long' as const, day: 'numeric' as const },
+        dayHeaderFormat: { weekday: 'long' as const, month: 'numeric' as const, day: 'numeric' as const },
         slotDuration: '00:30:00',
         slotLabelInterval: '01:00'
       }
@@ -140,19 +140,19 @@ const Calendar: React.FC<CalendarProps> = ({
     },
     views: {
       dayGridMonth: {
-        titleFormat: { year: 'numeric', month: 'long' },
-        dayHeaderFormat: { weekday: 'short' },
+        titleFormat: { year: 'numeric' as const, month: 'long' as const },
+        dayHeaderFormat: { weekday: 'short' as const },
         fixedWeekCount: false
       },
       timeGridWeek: {
-        titleFormat: { year: 'numeric', month: 'long' },
-        dayHeaderFormat: { weekday: 'short', month: 'numeric', day: 'numeric' },
+        titleFormat: { year: 'numeric' as const, month: 'long' as const },
+        dayHeaderFormat: { weekday: 'short' as const, month: 'numeric' as const, day: 'numeric' as const },
         slotDuration: '00:30:00',
         slotLabelInterval: '01:00'
       },
       timeGridDay: {
-        titleFormat: { year: 'numeric', month: 'long', day: 'numeric' },
-        dayHeaderFormat: { weekday: 'long', month: 'numeric', day: 'numeric' },
+        titleFormat: { year: 'numeric' as const, month: 'long' as const, day: 'numeric' as const },
+        dayHeaderFormat: { weekday: 'long' as const, month: 'numeric' as const, day: 'numeric' as const },
         slotDuration: '00:30:00',
         slotLabelInterval: '01:00'
       }
