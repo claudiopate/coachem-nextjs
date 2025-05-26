@@ -20,7 +20,7 @@ export default function Logo() {
           alt="Coachem Logo"
           width={120}
           height={32}
-          className="h-8 w-auto"
+          className="h-6 w-auto md:h-8"
           priority
         />
       </div>
@@ -34,7 +34,7 @@ export default function Logo() {
         alt="Coachem Logo"
         width={120}
         height={32}
-        className="h-8 w-auto"
+        className="h-6 w-auto md:h-8"
         priority
       />
     </div>
