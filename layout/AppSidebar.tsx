@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useSidebar } from "../context/SidebarContext";
+import { useSidebar } from "@/context/SidebarContext";
 import { createClient } from "@/utils/supabase/client";
 import {
   BoxIcon,
@@ -20,6 +20,7 @@ import {
   Users,
 } from "lucide-react"
 import { useParams } from 'next/navigation';
+import SidebarContent from "./SidebarContent";
 
 
 type NavItem = {
@@ -49,128 +50,37 @@ const navItems: NavItem[] = [
   }
 ];
 
-type Props = {
+interface AppSidebarProps {
   authProfileId: string;
   userRole?: string;
-};
+}
 
-const AppSidebar: React.FC<Props> = ({ authProfileId, userRole }) => {
-  const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
-  const pathname = usePathname();
+const AppSidebar = ({ authProfileId, userRole }: AppSidebarProps) => {
+  const { isExpanded, isHovered, isMobileOpen } = useSidebar();
+  const [isMounted, setIsMounted] = useState(false);
 
-  console.log('AppSidebar - Current userRole:', userRole);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
-  const renderMenuItems = (
-    navItems: NavItem[],
-    menuType: "main" | "others"
-  ) => {
-    return (
-      <ul className="flex flex-col gap-4">
-        {navItems.map((nav, index) => {
-          // Check if the menu item should be shown based on roles
-          const hasRequiredRole = !nav.roles || (userRole && nav.roles.includes(userRole));
-          console.log(`Menu item ${nav.name}:`, {
-            hasRoles: !!nav.roles,
-            requiredRoles: nav.roles,
-            userRole,
-            hasRequiredRole
-          });
+  if (!isMounted) return null;
 
-          if (!hasRequiredRole) {
-            return null;
-          }
-
-          return (
-            <li key={nav.name}>
-              {nav.path && (
-                <Link
-                  href={`/profile/${authProfileId}/${nav.path}`}
-                  className={`menu-item group ${pathname === `/profile/${authProfileId}/${nav.path}` ? "menu-item-active" : "menu-item-inactive"}`}
-                >
-                  <span
-                    className={`${
-                      pathname === `/profile/${authProfileId}/${nav.path}`
-                        ? "menu-item-icon-active"
-                        : "menu-item-icon-inactive"
-                    }`}
-                  >
-                    {nav.icon}
-                  </span>
-                  {(isExpanded || isHovered || isMobileOpen) && (
-                    <span className={`menu-item-text`}>{nav.name}</span>
-                  )}
-                </Link>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-    );
-  };
+  const sidebarWidth = isExpanded || isHovered ? "w-[290px]" : "w-[90px]";
+  const mobileClasses = isMobileOpen ? "translate-x-0" : "-translate-x-full";
 
   return (
     <aside
-      className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-200 
-        ${isExpanded || isMobileOpen
-          ? "w-[290px]"
-          : isHovered
-          ? "w-[290px]"
-          : "w-[90px]"
-        }
-        ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
-        lg:translate-x-0`}
-      onMouseEnter={() => !isExpanded && setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      className={`
+        fixed left-0 bottom-0 z-[99998]
+        bg-white dark:bg-zinc-900 border-r border-gray-200 dark:border-zinc-800
+        transition-all duration-300 ease-in-out overflow-hidden
+        w-[280px] sm:w-[290px]
+        lg:w-auto lg:sticky lg:top-[calc(env(safe-area-inset-top)+4rem)] lg:h-[calc(100vh-env(safe-area-inset-top)-4rem)]
+        ${mobileClasses} ${sidebarWidth}
+      `}
+      style={{ top: 'calc(env(safe-area-inset-top) + 3.5rem)' }}
     >
-      <div
-        className={`py-8 flex  ${
-          !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
-        }`}
-      >
-        <Link href="/">
-          {isExpanded || isHovered || isMobileOpen ? (
-            <>
-              <Image
-                className="dark:hidden"
-                src="/images/logo/logo.svg"
-                alt="Logo"
-                width={150}
-                height={40}
-              />
-              <Image
-                className="hidden dark:block"
-                src="/images/logo/logo-dark.svg"
-                alt="Logo"
-                width={150}
-                height={40}
-              />
-            </>
-          ) : (
-            <Image
-              src="/images/logo/logo-icon.svg"
-              alt="Logo"
-              width={32}
-              height={32}
-            />
-          )}
-        </Link>
-      </div>
-      <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
-        <nav className="mb-6">
-          <div className="flex flex-col gap-4">
-            <div>
-              <h2
-                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
-                  !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
-                }`}
-              >
-                {isExpanded || isHovered || isMobileOpen ? "Menu" : <GripHorizontal />}
-              </h2>
-              {renderMenuItems(navItems, "main")}
-            </div>
-          </div>
-        </nav>
-      </div>
+      <SidebarContent authProfileId={authProfileId} userRole={userRole} />
     </aside>
   );
 };

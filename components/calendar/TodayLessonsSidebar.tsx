@@ -3,6 +3,8 @@ import React, { useEffect, useState, useRef } from "react";
 import { EventInput } from "@fullcalendar/core";
 import { createClient } from "@/utils/supabase/client";
 import DeleteConfirmationModal from './DeleteConfirmationModal';
+import { format, isSameDay } from 'date-fns';
+import { it } from 'date-fns/locale';
 
 interface CalendarEvent extends EventInput {
   extendedProps: {
@@ -18,20 +20,20 @@ interface CalendarEvent extends EventInput {
 
 interface TodayLessonsSidebarProps {
   profileId: string;
+  selectedDate?: Date;
   onEventClick?: (event: CalendarEvent) => void;
   refreshTrigger?: number;
   onLessonUpdate?: () => void;
 }
 
-function isLessonToday(start: Date, end: Date) {
-  const today = new Date();
-  const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
-  const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
-  // Lesson overlaps with today if it starts before end of today and ends after start of today
+function isLessonOnDate(start: Date, end: Date, targetDate: Date) {
+  const startOfDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 0, 0, 0, 0);
+  const endOfDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 23, 59, 59, 999);
+  // Lesson overlaps with target date if it starts before end of day and ends after start of day
   return start <= endOfDay && end >= startOfDay;
 }
 
-export default function TodayLessonsSidebar({ profileId, onEventClick, refreshTrigger, onLessonUpdate }: TodayLessonsSidebarProps) {
+export default function TodayLessonsSidebar({ profileId, selectedDate = new Date(), onEventClick, refreshTrigger, onLessonUpdate }: TodayLessonsSidebarProps) {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,9 +51,8 @@ export default function TodayLessonsSidebar({ profileId, onEventClick, refreshTr
         return;
       }
 
-      const today = new Date();
-      const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+      const startOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+      const endOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate() + 1);
       
       const res = await fetch(`/api/profile/${user.id}/lessons?start=${encodeURIComponent(startOfDay.toISOString())}&end=${encodeURIComponent(endOfDay.toISOString())}`, {
         headers: {
@@ -73,14 +74,14 @@ export default function TodayLessonsSidebar({ profileId, onEventClick, refreshTr
 
   useEffect(() => {
     fetchLessons();
-  }, [profileId, refreshTrigger]);
+  }, [profileId, refreshTrigger, selectedDate]);
 
-  // Filter lessons that overlap with today and sort by start time
-  const todaysLessons = events
+  // Filter lessons that overlap with selected date and sort by start time
+  const selectedDateLessons = events
     .filter(ev => {
       const start = new Date(ev.start as string);
       const end = new Date(ev.end as string);
-      return isLessonToday(start, end);
+      return isLessonOnDate(start, end, selectedDate);
     })
     .sort((a, b) => new Date(a.start as string).getTime() - new Date(b.start as string).getTime());
 
@@ -132,18 +133,21 @@ export default function TodayLessonsSidebar({ profileId, onEventClick, refreshTr
     }
   };
 
+  const isToday = isSameDay(selectedDate, new Date());
+  const dateTitle = isToday ? 'Lezioni di oggi' : `Lezioni del ${format(selectedDate, 'd MMMM', { locale: it })}`;
+
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow p-4 border border-gray-100 dark:border-zinc-800">
-      <h2 className="text-lg font-semibold mb-4">Lezioni di oggi</h2>
+      <h2 className="text-lg font-semibold mb-4">{dateTitle}</h2>
       {loading ? (
         <div className="text-gray-400 text-sm">Caricamento...</div>
       ) : error ? (
         <div className="text-red-500 text-sm">{error}</div>
-      ) : todaysLessons.length === 0 ? (
-        <div className="text-gray-500 dark:text-gray-400 text-sm">Nessuna lezione per oggi</div>
+      ) : selectedDateLessons.length === 0 ? (
+        <div className="text-gray-500 dark:text-gray-400 text-sm">Nessuna lezione per questa data</div>
       ) : (
         <ul className="space-y-3">
-          {todaysLessons.map((lesson, idx) => (
+          {selectedDateLessons.map((lesson, idx) => (
             <div 
               key={lesson.id || idx} 
               className="w-full text-left flex flex-col gap-1 p-3 rounded-xl border border-gray-100 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/40 shadow-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-zinc-800/60 transition-colors relative group"

@@ -26,7 +26,15 @@
 /* Base mobile-first styles */
 :root {
   --container-padding: 1rem;
-  --header-height: 60px;
+  --header-height: 56px;
+}
+
+/* Safe area insets */
+@supports (padding-top: env(safe-area-inset-top)) {
+  :root {
+    --safe-area-top: env(safe-area-inset-top);
+    --safe-area-bottom: env(safe-area-inset-bottom);
+  }
 }
 
 /* Reset box-sizing */
@@ -83,6 +91,7 @@ a {
 @media (min-width: 640px) {
   :root {
     --container-padding: 2rem;
+    --header-height: 64px;
   }
 }
 

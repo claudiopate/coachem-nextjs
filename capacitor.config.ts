@@ -1,7 +1,7 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.claudiopaternesi.coachem',
+  appId: 'com.coachem.app',
   appName: 'Coachem',
   webDir: 'out',
   server: {
@@ -10,13 +10,25 @@ const config: CapacitorConfig = {
     androidScheme: 'http'
   },
   ios: {
-    contentInset: 'never',
-    allowsLinkPreview: false,
-    scrollEnabled: true,
-    limitsNavigationsToAppBoundDomains: true,
-    scheme: 'app',
+    contentInset: 'always',
+    backgroundColor: '#ffffff',
     preferredContentMode: 'mobile',
-    backgroundColor: '#ffffff'
+    scheme: 'app',
+    limitsNavigationsToAppBoundDomains: true,
+    scrollEnabled: true,
+    allowsLinkPreview: false,
+    overrideUserAgent: 'Coachem iOS App'
+  },
+  plugins: {
+    SplashScreen: {
+      launchAutoHide: true,
+      backgroundColor: "#ffffff",
+      showSpinner: false,
+      androidSpinnerStyle: "large",
+      spinnerColor: "#999999",
+      splashFullScreen: false,
+      splashImmersive: false
+    }
   }
 };
 
