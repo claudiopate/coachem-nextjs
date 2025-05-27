@@ -77,7 +77,7 @@ const Calendar: React.FC<CalendarProps> = ({
   const [showModal, setShowModal] = useState(false);
 
   // Define headerLeft before using it
-  const headerLeft = role === "coach" ? "createEventButton,prev,next" : "prev,next";
+  const headerLeft = "prev,next";
 
   // Add mobile view state
   const [isMobileView, setIsMobileView] = useState(false);
@@ -437,22 +437,7 @@ const Calendar: React.FC<CalendarProps> = ({
     setIsEditing(false);
   };
 
-  const handleAddButtonClick = () => {
-    console.log("Add button clicked"); // Debug log
-    resetModalFields();
-    handleModalOpen();
-  };
-
   const isCoach = role === "coach";
-
-  const customButtons = isCoach
-    ? {
-        addEventButton: {
-          text: "Add Lesson +",
-          click: handleAddButtonClick
-        },
-      }
-    : undefined;
 
   const handleDeleteClick = async (event: CalendarEvent) => {
     setLessonToDelete(event);
@@ -568,7 +553,6 @@ const Calendar: React.FC<CalendarProps> = ({
               select={handleDateSelect}
               eventClick={handleEventClick}
               eventContent={renderEventContent}
-              customButtons={customButtons}
               datesSet={handleDatesSet}
               height="100%"
               expandRows={true}

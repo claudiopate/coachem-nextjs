@@ -3,18 +3,19 @@ import { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'com.coachem.app',
   appName: 'Coachem',
-  webDir: 'out',
+  webDir: '.next',
   server: {
-    url: 'http://192.168.1.4:3000',
+    url: 'http://localhost:3000',
     cleartext: true,
-    androidScheme: 'http'
+    allowNavigation: ['*'],
+    hostname: 'localhost'
   },
   ios: {
     contentInset: 'always',
     backgroundColor: '#ffffff',
     preferredContentMode: 'mobile',
     scheme: 'app',
-    limitsNavigationsToAppBoundDomains: true,
+    limitsNavigationsToAppBoundDomains: false,
     scrollEnabled: true,
     allowsLinkPreview: false,
     overrideUserAgent: 'Coachem iOS App'

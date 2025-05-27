@@ -8,7 +8,10 @@
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",
-    "postsync": "ruby scripts/fix-sandboxing.rb"
+    "postsync": "ruby scripts/fix-sandboxing.rb",
+    "ios:build": "next build && npx cap sync ios",
+    "ios:open": "npx cap open ios",
+    "ios:sync": "npx cap sync ios && npm run ios:open"
   },
   "dependencies": {
     "@capacitor/cli": "^7.2.0",

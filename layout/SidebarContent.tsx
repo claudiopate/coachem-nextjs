@@ -5,7 +5,7 @@ import { useSidebar } from "@/context/SidebarContext";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { GripHorizontal } from "lucide-react";
+import { GripHorizontal, LayoutDashboard, Calendar, Users } from "lucide-react";
 
 interface NavItem {
   name: string;
@@ -27,24 +27,24 @@ const SidebarContent = ({ authProfileId, userRole }: SidebarContentProps) => {
     {
       name: "Dashboard",
       path: "dashboard",
-      icon: <GripHorizontal className="w-6 h-6" />,
+      icon: <LayoutDashboard className="w-6 h-6" />,
     },
     {
       name: "Calendar",
       path: "calendar",
-      icon: <GripHorizontal className="w-6 h-6" />,
+      icon: <Calendar className="w-6 h-6" />,
     },
     {
       name: "Students",
       path: "students",
-      icon: <GripHorizontal className="w-6 h-6" />,
-      roles: ["COACH"],
+      icon: <Users className="w-6 h-6" />,
+      roles: ["coach"],
     },
   ];
 
   const renderMenuItems = (navItems: NavItem[]) => {
     return (
-      <ul className="flex flex-col gap-4">
+      <ul className="flex flex-col gap-6 pl-8">
         {navItems.map((nav) => {
           const hasRequiredRole = !nav.roles || (userRole && nav.roles.includes(userRole));
           
@@ -54,20 +54,19 @@ const SidebarContent = ({ authProfileId, userRole }: SidebarContentProps) => {
             <li key={nav.name}>
               <Link
                 href={`/profile/${authProfileId}/${nav.path}`}
-                className={`menu-item group ${
+                className={`menu-item group flex items-center ${
                   pathname === `/profile/${authProfileId}/${nav.path}`
-                    ? "menu-item-active"
-                    : "menu-item-inactive"
+                    ? "text-primary"
+                    : "text-gray-600 dark:text-gray-400"
                 }`}
               >
-                <span className={pathname === `/profile/${authProfileId}/${nav.path}`
-                  ? "menu-item-icon-active"
-                  : "menu-item-icon-inactive"
-                }>
+                <span className="flex items-center justify-center">
                   {nav.icon}
                 </span>
                 {(isExpanded || isHovered || isMobileOpen) && (
-                  <span className="menu-item-text">{nav.name}</span>
+                  <span className="ml-6 text-base">
+                    {nav.name}
+                  </span>
                 )}
               </Link>
             </li>
@@ -83,7 +82,7 @@ const SidebarContent = ({ authProfileId, userRole }: SidebarContentProps) => {
       onMouseEnter={() => !isExpanded && setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className={`py-8 flex ${!isExpanded && !isHovered ? "justify-center" : "justify-start"} px-5`}>
+      <div className={`py-8 flex items-center ${!isExpanded && !isHovered ? "justify-center" : "px-8"}`}>
         <Link href="/">
           {isExpanded || isHovered || isMobileOpen ? (
             <>
@@ -91,15 +90,15 @@ const SidebarContent = ({ authProfileId, userRole }: SidebarContentProps) => {
                 className="dark:hidden"
                 src="/images/logo/logo.svg"
                 alt="Logo"
-                width={150}
-                height={40}
+                width={154}
+                height={32}
               />
               <Image
                 className="hidden dark:block"
                 src="/images/logo/logo-dark.svg"
                 alt="Logo"
-                width={150}
-                height={40}
+                width={154}
+                height={32}
               />
             </>
           ) : (
@@ -113,14 +112,14 @@ const SidebarContent = ({ authProfileId, userRole }: SidebarContentProps) => {
         </Link>
       </div>
 
-      <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar px-5">
-        <nav className="mb-6">
-          <div className="flex flex-col gap-4">
+      <div className="flex flex-col overflow-y-auto duration-300 ease-linear">
+        <nav>
+          <div className="flex flex-col">
             <div>
-              <h2 className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
-                !isExpanded && !isHovered ? "justify-center" : "justify-start"
+              <h2 className={`mb-6 text-sm uppercase flex leading-[20px] text-gray-500 ${
+                !isExpanded && !isHovered ? "justify-center" : "pl-8"
               }`}>
-                {isExpanded || isHovered || isMobileOpen ? "Menu" : <GripHorizontal />}
+                {isExpanded || isHovered || isMobileOpen ? "Menu" : <GripHorizontal className="w-6 h-6" />}
               </h2>
               {renderMenuItems(navItems)}
             </div>

@@ -15,7 +15,7 @@ interface EventModalProps {
   eventEndDate: string;
   setEventEndDate: (date: string) => void;
   onSubmit: () => void;
-  selectedEvent: boolean;
+  selectedEvent: CalendarEvent | null;
   lessonType: "single" | "group";
   setLessonType: (type: "single" | "group") => void;
   selectedProfiles: Array<{ id: string; name: string }>;
@@ -23,6 +23,19 @@ interface EventModalProps {
   selectedProfileGroup: Array<{ id: string; name: string }>;
   setSelectedProfileGroup: (profiles: Array<{ id: string; name: string }>) => void;
   onDelete?: () => void;
+}
+
+interface CalendarEvent {
+  id: string;
+  title: string;
+  start: string;
+  end: string;
+  allDay?: boolean;
+  extendedProps: {
+    type: "individual" | "group";
+    coach: string;
+    participants: Array<{ id: string; name: string }>;
+  };
 }
 
 const LessonModal: React.FC<EventModalProps> = ({
@@ -79,7 +92,7 @@ const LessonModal: React.FC<EventModalProps> = ({
           const response = await res.json();
           const options = response.data.map((p: any) => ({
             value: p.id,
-            label: p.name,
+            label: `${p.firstName} ${p.lastName}`
           }));
           setProfileOptions(options);
         }
@@ -143,10 +156,45 @@ const LessonModal: React.FC<EventModalProps> = ({
     setError(null);
     setLoading(true);
     try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        setError('No user available');
+        return;
+      }
+
+      const newEvent = {
+        id: selectedEvent ? selectedEvent.id : Date.now().toString(),
+        title: eventTitle || (lessonType === "single" ? 
+          `Individual Lesson with ${selectedProfiles[0]?.name}` :
+          `Group Lesson: ${selectedProfileGroup[0]?.name}`),
+        start: eventStartDate,
+        end: eventEndDate,
+        allDay: false,
+        extendedProps: {
+          type: lessonType === "single" ? "individual" : "group",
+          coach: `${user.user_metadata.first_name} ${user.user_metadata.last_name}`,
+          participants: lessonType === "single" ? selectedProfiles : selectedProfileGroup
+        }
+      };
+
+      const response = await fetch(`/api/profile/${user.id}/lessons`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user.id}`
+        },
+        body: JSON.stringify(newEvent)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to save lesson');
+      }
+
       await onSubmit();
       handleClose();
     } catch (error) {
-      setError('Failed to save lesson. Please try again.');
+      setError(error instanceof Error ? error.message : 'Failed to save lesson. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -241,12 +289,16 @@ const LessonModal: React.FC<EventModalProps> = ({
               </label>
               <Select
                 isMulti={false}
-                value={selectedProfiles.map(p => ({ value: p.id, label: p.name }))[0]}
+                value={selectedProfiles.length > 0 ? { 
+                  value: selectedProfiles[0].id, 
+                  label: selectedProfiles[0].name 
+                } : null}
                 onChange={(selected) => {
                   if (selected) {
+                    const selectedValue = selected as { value: string; label: string };
                     setSelectedProfiles([{
-                      id: (selected as { value: string; label: string }).value,
-                      name: (selected as { value: string; label: string }).label
+                      id: selectedValue.value,
+                      name: selectedValue.label
                     }]);
                   } else {
                     setSelectedProfiles([]);
@@ -255,6 +307,82 @@ const LessonModal: React.FC<EventModalProps> = ({
                 options={profileOptions}
                 className="w-full"
                 isClearable
+                isLoading={loading}
+                placeholder="Select a student..."
+                noOptionsMessage={() => "No students found"}
+                styles={{
+                  control: (base) => ({
+                    ...base,
+                    minHeight: '44px',
+                    backgroundColor: 'transparent',
+                    borderColor: 'var(--border-color, #E5E7EB)',
+                    fontSize: '16px',
+                    '&:hover': {
+                      borderColor: 'var(--border-hover-color, #D1D5DB)'
+                    }
+                  }),
+                  menu: (base) => ({
+                    ...base,
+                    backgroundColor: 'var(--bg-color, white)',
+                    border: '1px solid var(--border-color, #E5E7EB)',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                    zIndex: 9999
+                  }),
+                  menuList: (base) => ({
+                    ...base,
+                    maxHeight: '40vh',
+                    padding: '8px 0'
+                  }),
+                  option: (base, state) => ({
+                    ...base,
+                    backgroundColor: state.isSelected ? 'var(--selected-bg, #4F46E5)' : 'transparent',
+                    color: state.isSelected ? 'white' : 'inherit',
+                    fontSize: '16px',
+                    padding: '12px 16px',
+                    '&:hover': {
+                      backgroundColor: state.isSelected ? 'var(--selected-bg, #4F46E5)' : 'var(--hover-bg, #F3F4F6)'
+                    },
+                    '&:active': {
+                      backgroundColor: 'var(--selected-bg, #4F46E5)',
+                      color: 'white'
+                    }
+                  }),
+                  singleValue: (base) => ({
+                    ...base,
+                    fontSize: '16px',
+                    color: 'inherit'
+                  }),
+                  placeholder: (base) => ({
+                    ...base,
+                    fontSize: '16px',
+                    color: 'var(--placeholder-color, #9CA3AF)'
+                  }),
+                  input: (base) => ({
+                    ...base,
+                    fontSize: '16px'
+                  })
+                }}
+                theme={(theme) => ({
+                  ...theme,
+                  colors: {
+                    ...theme.colors,
+                    primary: 'var(--primary-color, #4F46E5)',
+                    primary75: 'var(--primary-color-75, #6366F1)',
+                    primary50: 'var(--primary-color-50, #818CF8)',
+                    primary25: 'var(--primary-color-25, #C7D2FE)',
+                    neutral0: 'var(--bg-color, white)',
+                    neutral5: 'var(--hover-bg, #F3F4F6)',
+                    neutral10: 'var(--hover-bg, #F3F4F6)',
+                    neutral20: 'var(--border-color, #E5E7EB)',
+                    neutral30: 'var(--border-hover-color, #D1D5DB)',
+                    neutral40: 'var(--placeholder-color, #9CA3AF)',
+                    neutral50: 'var(--placeholder-color, #9CA3AF)',
+                    neutral60: 'var(--text-color, #4B5563)',
+                    neutral70: 'var(--text-color, #374151)',
+                    neutral80: 'var(--text-color, #1F2937)',
+                    neutral90: 'var(--text-color, #111827)'
+                  }
+                })}
               />
             </div>
           )}

@@ -26,26 +26,16 @@ export default function Header({ isOpen, setIsOpen }: HeaderProps) {
   };
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50">
-      {/* Safe area spacer */}
-      <div className="bg-white dark:bg-gray-900 h-[48px] ios:h-[64px]" />
-      
-      {/* Header content */}
-      <div className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800">
-        <nav className="container mx-auto px-4 h-14 flex items-center justify-between">
+    <header className="fixed inset-x-0 top-0 z-50 bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800">
+      <nav className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex-shrink-0">
             <button
               onClick={() => handleNavigation('/')}
               className="flex items-center"
             >
-              <Image
-                src="/images/logo/logo.svg"
-                alt="Logo"
-                width={120}
-                height={32}
-                className="h-6 w-auto md:h-8"
-              />
+              {/* Logo temporaneamente rimosso */}
             </button>
           </div>
 
@@ -79,34 +69,34 @@ export default function Header({ isOpen, setIsOpen }: HeaderProps) {
               </button>
             ))}
           </div>
+        </div>
 
-          {/* Mobile navigation */}
-          <div 
-            className={`
-              fixed inset-x-0 top-[112px] ios:top-[128px] bottom-0
-              bg-white dark:bg-gray-900 shadow-lg md:hidden
-              transform transition-transform duration-200 ease-in-out
-              ${isOpen ? 'translate-y-0' : '-translate-y-full'}
-            `}
-          >
-            <div className="px-4 py-3 space-y-1">
-              {navigationItems.map((item) => (
-                <button
-                  key={item.name}
-                  onClick={() => handleNavigation(item.href)}
-                  className={`w-full text-left px-4 py-3 rounded-lg text-base font-medium transition-colors ${
-                    pathname?.startsWith(item.href)
-                      ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/50'
-                      : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-200 dark:hover:bg-gray-800'
-                  }`}
-                >
-                  {item.name}
-                </button>
-              ))}
-            </div>
+        {/* Mobile navigation */}
+        <div 
+          className={`
+            md:hidden
+            bg-white dark:bg-gray-900 shadow-lg
+            transform transition-transform duration-200 ease-in-out
+            ${isOpen ? 'translate-y-0' : '-translate-y-full'}
+          `}
+        >
+          <div className="px-4 py-3 space-y-1">
+            {navigationItems.map((item) => (
+              <button
+                key={item.name}
+                onClick={() => handleNavigation(item.href)}
+                className={`w-full text-left px-4 py-3 rounded-lg text-base font-medium transition-colors ${
+                  pathname?.startsWith(item.href)
+                    ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/50'
+                    : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-200 dark:hover:bg-gray-800'
+                }`}
+              >
+                {item.name}
+              </button>
+            ))}
           </div>
-        </nav>
-      </div>
+        </div>
+      </nav>
     </header>
   );
 } 

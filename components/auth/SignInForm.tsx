@@ -95,16 +95,6 @@ export default function SignInForm() {
   return (
     <div className="relative flex h-screen w-full items-center justify-center dark:bg-gray-900 lg:flex-row">
       <div className="w-[420px] px-4 lg:px-0 lg:mr-8">
-        <div className="mb-4">
-          <Link
-            href="/"
-            className="inline-flex items-center text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-          >
-            <ChevronLeftIcon className="h-4 w-4 mr-1" />
-            Back to dashboard
-          </Link>
-        </div>
-
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             Sign In

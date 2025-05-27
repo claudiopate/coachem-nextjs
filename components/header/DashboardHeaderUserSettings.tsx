@@ -14,26 +14,18 @@ const DashboardHeaderUserSettings: React.FC<Props> = ({
   isApplicationMenuOpen,
   setApplicationMenuOpen,
 }) => {
-
   return (
-    
-        <div
-          className={`${
-            isApplicationMenuOpen ? "flex" : "hidden"
-          } items-center justify-between w-full gap-4 px-5 py-4 lg:flex shadow-theme-md lg:justify-end lg:px-0 lg:shadow-none`}
-        >
-
-          <div className="flex items-center gap-2 2xsm:gap-3">
-            {/* <!-- Dark Mode Toggler --> */}
-            <ThemeToggleButton />
-            {/* <!-- Dark Mode Toggler --> */}
-
-            <NotificationDropdown /> 
-            {/* <!-- Notification Menu Area --> */}
-          </div>
-          {/* <!-- User Area --> */}
-          <UserDropdown /> 
-        </div>
+    <div
+      className={`${
+        isApplicationMenuOpen ? "flex" : "hidden"
+      } fixed top-[calc(env(safe-area-inset-top)+3.5rem)] right-0 left-0 flex-col w-full bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 lg:relative lg:flex lg:flex-row lg:w-auto lg:border-none lg:top-auto lg:bg-transparent`}
+    >
+      <div className="flex items-center justify-end gap-2 p-4 lg:p-0">
+        <ThemeToggleButton />
+        <NotificationDropdown />
+        <UserDropdown />
+      </div>
+    </div>
   );
 };
 

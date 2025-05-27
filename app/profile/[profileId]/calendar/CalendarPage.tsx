@@ -7,6 +7,9 @@ import { useModal } from "@/hooks/useModal";
 import { useProfile } from "@/context/profile/ProfileProvider";
 import { useState, useEffect } from "react";
 import { EventInput } from "@fullcalendar/core";
+import { RoleBasedAccess } from "@/components/auth/RoleBasedAccess";
+import { useAuthRole } from "@/context/auth/AuthRoleProvider";
+import LessonModal from "@/components/calendar/LessonModal";
 
 interface CalendarEvent extends EventInput {
   extendedProps: {
@@ -34,6 +37,13 @@ export default function CalendarPage({ params }: CalendarPageProps) {
   const { profile, loading, error } = useProfile();
   const [isMobileView, setIsMobileView] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [eventTitle, setEventTitle] = useState("");
+  const [eventStartDate, setEventStartDate] = useState("");
+  const [eventEndDate, setEventEndDate] = useState("");
+  const [lessonType, setLessonType] = useState<"single" | "group">("single");
+  const [selectedProfiles, setSelectedProfiles] = useState<Array<{ id: string; name: string }>>([]);
+  const [selectedProfileGroup, setSelectedProfileGroup] = useState<Array<{ id: string; name: string }>>([]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -55,6 +65,27 @@ export default function CalendarPage({ params }: CalendarPageProps) {
 
   const handleLessonUpdate = () => {
     setRefreshTrigger(prev => prev + 1);
+  };
+
+  const handleAddButtonClick = () => {
+    // Reset form fields
+    setEventTitle("");
+    setEventStartDate(new Date().toISOString().slice(0, 16));
+    setEventEndDate(new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16));
+    setLessonType("single");
+    setSelectedProfiles([]);
+    setSelectedProfileGroup([]);
+    setShowAddModal(true);
+  };
+
+  const handleAddModalClose = () => {
+    setShowAddModal(false);
+  };
+
+  const handleAddModalSubmit = async () => {
+    // After successful submission
+    setShowAddModal(false);
+    handleLessonUpdate();
   };
 
   if (loading) {
@@ -85,7 +116,9 @@ export default function CalendarPage({ params }: CalendarPageProps) {
   return (
     <div className="flex flex-col h-[100dvh] bg-gray-50 dark:bg-zinc-900">
       <div className="flex-none px-4 pt-safe">
-        <PageBreadcrumb pageTitle="Lessons" />
+        <div className="flex justify-between items-center mb-4">
+          <PageBreadcrumb pageTitle="Lessons" />
+        </div>
       </div>
       
       <div className="flex-1 overflow-auto px-4 pb-safe">
@@ -96,6 +129,7 @@ export default function CalendarPage({ params }: CalendarPageProps) {
               <MobileCalendar 
                 profileId={profileId}
                 onDateSelect={setSelectedDate}
+                onLessonUpdate={handleLessonUpdate}
               />
             ) : (
               <Calendar 
@@ -120,6 +154,27 @@ export default function CalendarPage({ params }: CalendarPageProps) {
           </div>
         </div>
       </div>
+
+      <RoleBasedAccess allowedRoles={["coach"]}>
+        <LessonModal
+          isOpen={showAddModal}
+          onClose={handleAddModalClose}
+          onSubmit={handleAddModalSubmit}
+          selectedEvent={false}
+          eventTitle={eventTitle}
+          setEventTitle={setEventTitle}
+          eventStartDate={eventStartDate}
+          setEventStartDate={setEventStartDate}
+          eventEndDate={eventEndDate}
+          setEventEndDate={setEventEndDate}
+          lessonType={lessonType}
+          setLessonType={setLessonType}
+          selectedProfiles={selectedProfiles}
+          setSelectedProfiles={setSelectedProfiles}
+          selectedProfileGroup={selectedProfileGroup}
+          setSelectedProfileGroup={setSelectedProfileGroup}
+        />
+      </RoleBasedAccess>
     </div>
   );
 } 
